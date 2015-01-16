@@ -1,0 +1,30 @@
+{
+  "name": "modelStore",
+  "version": "0.0.1",
+  "authors": [
+    "MikaAK <mikakalathil@gmail.com>"
+  ],
+  "description": "A model store for angularjs",
+  "main": "store_service.js",
+  "moduleType": [
+    "es6"
+  ],
+  "keywords": [
+    "angular",
+    "model",
+    "cache",
+    "es6"
+  ],
+  "license": "MIT",
+  "homepage": "mikakalathil.ca",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "thaw.js": "~1.1.7"
+  }
+}
