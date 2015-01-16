@@ -53,4 +53,6 @@ Temporary Items
 .apdisk
 
 
-#!! ERROR: javascript is undefined. Use list command to see defined gitignore types !!#
+### Bower ###
+bower_components
+
