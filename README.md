@@ -1,13 +1,13 @@
 ModelStore
 ====
-
 The model store is a service that keeps track of all the models you have created, it will also update the modelCache so you are sharing the same data everywhere without having to pass the data around. 
 
 Event's can also be emitted from inside the class and will broadcast througout the app
 
+### Dependancies
+The only dependancy this has is [thaw.js](robertleeplummerjr.github.io/thaw.js/). This helps to run callbacks at a browser convinient time.
 
 ### Usage
-
 Create a new service and extend the ModelStore onto it. Be careful not to override the constructor. To add stuff to the initializaition overload the `init` method.
 
 #### EG
