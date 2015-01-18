@@ -1,4 +1,8 @@
-(function() {
+import angular from 'angular'
+import thaw from 'thaw'
+
+
+export function Store() {
   'use strict'
 
   angular.module('modelStore', [])
@@ -136,4 +140,4 @@
         }
       }
     }])
-})()
+}

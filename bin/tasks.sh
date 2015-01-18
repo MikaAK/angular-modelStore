@@ -6,7 +6,7 @@ else
   case "$1" in
     build)
       echo 'Compiling ES6'
-      6to5 src/store.js -o dist/store.js -m system
+      6to5 src/ -o dist/store.js -m system
       ;;
 
     dist:clean)
@@ -21,7 +21,7 @@ else
 
     watch)
       echo 'Watching for changes'
-      6to5 src/store.js -o dist/store.js --source-maps --watch -m system
+      6to5 src/ -o dist/store.js --source-maps --watch -m system
       ;;
   esac
 fi
