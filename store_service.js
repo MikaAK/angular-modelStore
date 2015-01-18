@@ -1,7 +1,7 @@
 'use strict'
 
 angular.module('modelStore', [])
-  .service('Store', ['$rootScope', ($rootScope) => {
+  .service('Store', ['$rootScope', 'thaw', ($rootScope, thaw) => {
     var thawInst,
         modelCache = {},
         anonIndex  = 0
@@ -27,12 +27,20 @@ angular.module('modelStore', [])
         // Set up Object.observe so we can keep the modelCache updated
         // without thinking about it
         if (modelName)
-          Object.observe(this, this._objectChanged)
+          Object.observe(this, this.__objectChanged__)
 
         // Store current object in modelCache
         modelCache[this.modelCacheId()] = this
 
-        // cannot specify return so need to just assume object is immutable
+        // Init function to be extended
+        this.init()
+
+        // cannot specify return so need to just assume object
+        //is immutable and can only call functions
+      }
+
+      init() {
+        return this._filterFunctions()
       }
 
       listen(callback) {
@@ -47,7 +55,6 @@ angular.module('modelStore', [])
       }
 
       modelCacheId(name = this.modelName) {
-        // Returns cacheId used for caching
         return `${this._className()}:${name}`
       }
 
@@ -72,37 +79,6 @@ angular.module('modelStore', [])
         return anonCallbacks
       }
 
-      _objectChanged(changes) {
-        var self = this,
-            changedModels = {}
-
-        thaw(changes, {
-          each: (i) => {
-            let change = changes[i].object
-            changedModels[change._className()] = change
-          },
-
-          done: () => {
-            for (let key in changedModels)
-              changedModels[key]._processCallbacks()
-          }
-        })
-      }
-
-      _processCallbacks(model = this) {
-        var allCallbacks = model._usersListening.concat(model._anonCallbacks())
-
-        thaw(allCallbacks, {
-          each: (i) => {
-            allCallbacks[i](model.modelCacheId(), model._filterData())
-          },
-
-          done: () => {
-            modelCache[model.modelCacheId()] = model
-          }
-        })
-      }
-
       _filterData(data = this) {
         var cloneData = {}
 
@@ -117,10 +93,41 @@ angular.module('modelStore', [])
         var functionSet = {}
 
         for (var key in data)
-          if (typeof data[key] === 'function' && key[0] !== '_')
+          if (typeof data[key] === 'function' && key.substr(0, 2) !== '__')
             functionSet[key] = angular.copy(data[key])
 
         return functionSet
+      }
+
+      __objectChanged__(changes) {
+        var self = this,
+            changedModels = {}
+
+        thaw(changes, {
+          each: (i) => {
+            let change = changes[i].object
+            changedModels[change._className()] = change
+          },
+
+          done: () => {
+            for (let key in changedModels)
+              changedModels[key].__processCallbacks__()
+          }
+        })
+      }
+
+      __processCallbacks__(model = this) {
+        var allCallbacks = model._usersListening.concat(model._anonCallbacks())
+
+        thaw(allCallbacks, {
+          each: (i) => {
+            allCallbacks[i](model.modelCacheId(), model._filterData())
+          },
+
+          done: () => {
+            modelCache[model.modelCacheId()] = model
+          }
+        })
       }
     }
   }])
