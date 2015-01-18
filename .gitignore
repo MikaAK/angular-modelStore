@@ -4,6 +4,7 @@
 # Logs
 logs
 *.log
+dist/*.map
 
 # Runtime data
 pids
@@ -55,4 +56,3 @@ Temporary Items
 
 ### Bower ###
 bower_components
-
