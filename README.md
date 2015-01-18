@@ -13,18 +13,21 @@ Create a new service and extend the ModelStore onto it. Be careful not to overri
 #### EG
 ```javascript
 .service('Student', function() {
-  return class Student extends Store {
+  return Store.extend('Student', {
     init() {
       console.log("I'm initializing")
-    }
+    },
 
     save() {
       this.makeApiPost()
       this.emit('studentUpdated')
     }
-  }
+  })
 })
 ```
+
+### Why No Class inheritance
+Your probably wondering why I don't just use `MyStore extends Store`, the reason is because you cannot return values from the constructor in extended classes the workaround is to call super on your new class. Luckily all you need to do here is call it with extend and let the `modelStore` do its magic.
 
 ### Initializing a model
 To initalize a model create a `new` instance and give it a name, for example a Student with the Id of 1 could be used like `new Student('1')` this way you can call `new Student('1')` from anywhere in your code without creating a new instance. The other benifit of this is you don't have to search different scopes for data. It is all availible through the model cache.
