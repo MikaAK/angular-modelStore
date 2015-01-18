@@ -1,14 +1,14 @@
 ModelStore
 ====
-The model store is a service that keeps track of all the models you have created, it will also update the modelCache so you are sharing the same data everywhere without having to pass the data around. 
+The model store is a service that keeps track of all the models you have created, it will also update the modelCache so you are sharing the same data everywhere without having to pass the data around.
 
-Event's can also be emitted from inside the class and will broadcast througout the app
+Event's can also be emitted from inside the class and will broadcast throughout the app
 
 ### Dependancies
-The only dependancy this has is [thaw.js](robertleeplummerjr.github.io/thaw.js/). This helps to run callbacks at a browser convinient time.
+The only has two dependancies [thaw.js](robertleeplummerjr.github.io/thaw.js/) and the `browser-polyfill` from `6to5` (inside the `vendor/` directory). This helps to run callbacks at a browser convenient time.
 
 ### Usage
-Create a new service and extend the ModelStore onto it. Be careful not to override the constructor. To add stuff to the initializaition overload the `init` method.
+Create a new service and extend the ModelStore onto it. Be careful not to override the constructor. To add stuff to the initialization overload the `init` method.
 
 #### EG
 ```javascript
@@ -31,7 +31,7 @@ To initalize a model create a `new` instance and give it a name, for example a S
 
 
 ### Anon Listeners
-Another thing you can do is setup anonomys listeners for the entire model. For example if you wanted to listen for all changes on the Student model you would call 
+Another thing you can do is setup anonomys listeners for the entire model. For example if you wanted to listen for all changes on the Student model you would call
 
 ```javascript
 (new Student()).listen(function(eventName, data) {

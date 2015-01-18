@@ -4,8 +4,8 @@
   "authors": [
     "MikaAK <mikakalathil@gmail.com>"
   ],
-  "description": "A model store for angularjs",
-  "main": "src/store_service.js",
+  "description": "A model store for angularjs this depends on the browser polyfill from 6to5",
+  "main": "dist/store.js",
   "moduleType": [
     "es6"
   ],

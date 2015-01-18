@@ -1,0 +1,33 @@
+{
+  "name": "modelStore",
+  "version": "0.0.1",
+  "description": "angular model store that allows you to share data over all instances, as well as storing all models in one location.",
+  "main": "dist/store_service.js",
+  "scripts": {
+    "js": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MikaAK/angular-modelStore.git"
+  },
+  "keywords": [
+    "angular",
+    "model",
+    "chahe",
+    "store"
+  ],
+  "author": "Mika Kalathil",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MikaAK/angular-modelStore/issues"
+  },
+  "devDependencies": {
+    "6to5": "latest"
+  },
+  "scripts": {
+    "task": "bin/tasks.sh",
+    "start": "npm run task dist:clean && npm run task dist:create && npm run task watch",
+    "build": "npm run task dist:clean && npm run task dist:create && npm run task build"
+  },
+  "homepage": "https://github.com/MikaAK/angular-modelStore"
+}
