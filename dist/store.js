@@ -67,6 +67,9 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         configurable: true
       },
       extend: {
+
+        // Extend the Store class, this is used over ES6 extension so we
+        // can keep the return values of extended objects
         value: function extend(className, data) {
           var Model = function (modelName) {
             return Store.call(this, className, modelName);
@@ -112,7 +115,29 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
           var data = arguments[1] === undefined ? this : arguments[1];
           // Broadcast events through the application scope only
           // passes a deep copy of the data
-          $rootScope.$broadcast(eventName, this._filterData(data));
+          $rootScope.$broadcast(eventName, this.data(data));
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      data: {
+
+        // Get a copy of the data for current model
+        value: function data() {
+          var data = arguments[0] === undefined ? this : arguments[0];
+          var cloneData = {};
+
+          for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
+            var _ref = _step.value;
+            var _ref2 = _slicedToArray(_ref, 2);
+
+            var key = _ref2[0];
+            var value = _ref2[1];
+            if (key[0] !== "_" && typeof value !== "function") cloneData[key] = angular.copy(value);
+          }
+
+          return cloneData;
         },
         writable: true,
         enumerable: true,
@@ -148,26 +173,6 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
           }
 
           return anonCallbacks;
-        },
-        writable: true,
-        enumerable: true,
-        configurable: true
-      },
-      _filterData: {
-        value: function FilterData() {
-          var data = arguments[0] === undefined ? this : arguments[0];
-          var cloneData = {};
-
-          for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
-            var _ref = _step.value;
-            var _ref2 = _slicedToArray(_ref, 2);
-
-            var key = _ref2[0];
-            var value = _ref2[1];
-            if (key[0] !== "_" && typeof value !== "function") cloneData[key] = angular.copy(value);
-          }
-
-          return cloneData;
         },
         writable: true,
         enumerable: true,
@@ -220,7 +225,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
 
           thaw(allCallbacks, {
             each: function (i) {
-              allCallbacks[i](model.modelCacheId(), model._filterData());
+              allCallbacks[i](model.modelCacheId(), model.data());
             },
 
             done: function () {

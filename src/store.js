@@ -12,6 +12,8 @@ angular.module('modelStore', [])
         return modelCache
       }
 
+      // Extend the Store class, this is used over ES6 extension so we
+      // can keep the return values of extended objects
       static extend(className, data) {
         var Model = function(modelName) {
           return Store.call(this, className, modelName)
@@ -70,7 +72,18 @@ angular.module('modelStore', [])
       emit(eventName = this.modelCacheId(), data = this) {
         // Broadcast events through the application scope only
         // passes a deep copy of the data
-        $rootScope.$broadcast(eventName, this._filterData(data))
+        $rootScope.$broadcast(eventName, this.data(data))
+      }
+
+      // Get a copy of the data for current model
+      data(data = this) {
+        var cloneData = {}
+
+        for (let [key, value] of Object.entries(data))
+          if (key[0] !== '_' && typeof value !== 'function')
+            cloneData[key] = angular.copy(value)
+
+        return cloneData
       }
 
       // Id of model cache used for caching and default event names
@@ -93,16 +106,6 @@ angular.module('modelStore', [])
         }
 
         return anonCallbacks
-      }
-
-      _filterData(data = this) {
-        var cloneData = {}
-
-        for (let [key, value] of Object.entries(data))
-          if (key[0] !== '_' && typeof value !== 'function')
-            cloneData[key] = angular.copy(value)
-
-        return cloneData
       }
 
       _filterFunctions(data = this) {
@@ -141,7 +144,7 @@ angular.module('modelStore', [])
 
         thaw(allCallbacks, {
           each: (i) => {
-            allCallbacks[i](model.modelCacheId(), model._filterData())
+            allCallbacks[i](model.modelCacheId(), model.data())
           },
 
           done: () => {
