@@ -5,7 +5,7 @@
     "MikaAK <mikakalathil@gmail.com>"
   ],
   "description": "A model store for angularjs",
-  "main": "dist/store_service.js",
+  "main": "src/store_service.js",
   "moduleType": [
     "es6"
   ],
