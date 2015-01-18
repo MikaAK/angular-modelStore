@@ -6,7 +6,7 @@ angular.module('modelStore', [])
         modelCache = {},
         anonIndex  = 0
 
-    return class Medit8ionApi {
+    return class Store {
       static __modelCache__() {
         return modelCache
       }
@@ -39,21 +39,25 @@ angular.module('modelStore', [])
         //is immutable and can only call functions
       }
 
+      // Init function to overload
       init() {
         return this._filterFunctions()
       }
-
+      
+      // Listen to all changes on model
       listen(callback) {
         // Add callback to the current classes cache in modelCache
         modelCache[this.modelCacheId()]._usersListening.push(callback)
       }
 
+      // Emit events along scopes
       emit(eventName = this.modelCacheId(), data = this) {
         // Broadcast events through the application scope only
         // passes a deep copy of the data
         $rootScope.$broadcast(eventName, this._filterData(data))
       }
 
+      // Id of model cache used for caching and default event names
       modelCacheId(name = this.modelName) {
         return `${this._className()}:${name}`
       }
