@@ -1,7 +1,8 @@
 'use strict'
 
 angular.module('modelStore', [])
-  .service('Store', ['$rootScope', 'thaw', ($rootScope, thaw) => {
+
+  .service('Store', ['$rootScope', ($rootScope) => {
     var thawInst,
         modelCache = {},
         anonIndex  = 0
@@ -11,17 +12,31 @@ angular.module('modelStore', [])
         return modelCache
       }
 
-      constructor(modelName = null) {
+      static extend(className, data) {
+        var Model = function(modelName) {
+          return Store.call(this, className, modelName)
+        }
+
+        Model.prototype = Object.create(Store.prototype)
+        Model.constructor = Store
+        angular.extend(Model.prototype, data)
+
+        return Model
+      }
+
+      constructor(storeName, modelName = null) {
         var model
 
         // Check for modelName or assign anonId
-        this.modelName = modelName ? modelName : this._anonId(anonIndex++)
+        this._modelName = modelName ? modelName : this._anonId(anonIndex++)
+        this._className = storeName
         model = modelCache[this.modelCacheId()]
 
         // Return the model if already exists
         if (model)
           return model
 
+        // Setup array for users listening to model
         this._usersListening = []
 
         // Set up Object.observe so we can keep the modelCache updated
@@ -32,16 +47,17 @@ angular.module('modelStore', [])
         // Store current object in modelCache
         modelCache[this.modelCacheId()] = this
 
-        // Init function to be extended
+        // Run init function to be overloaded
         this.init()
 
         // cannot specify return so need to just assume object
         //is immutable and can only call functions
+        return this._filterFunctions()
       }
 
-      // Init function to overload
+      // Init function, this is for overloading
       init() {
-        return this._filterFunctions()
+        return this
       }
 
       // Listen to all changes on model
@@ -58,12 +74,8 @@ angular.module('modelStore', [])
       }
 
       // Id of model cache used for caching and default event names
-      modelCacheId(name = this.modelName) {
-        return `${this._className()}:${name}`
-      }
-
-      _className(object = this) {
-        return object.constructor.name
+      modelCacheId(name = this._modelName) {
+        return `${this._className}:${name}`
       }
 
       _anonId(index) {
@@ -96,9 +108,13 @@ angular.module('modelStore', [])
       _filterFunctions(data = this) {
         var functionSet = {}
 
-        for (var key in data)
-          if (typeof data[key] === 'function' && key.substr(0, 2) !== '__')
-            functionSet[key] = angular.copy(data[key])
+        for (let key in data) {
+          let isPrivFunction = key.substr(0, 2) !== '__' && typeof data[key] === 'function',
+              isPrivString   = typeof data[key] === 'string' && key.substr(0, 2).match(/^_[^_]/)
+
+          if (isPrivFunction || isPrivString)
+            functionSet[key] = typeof data[key] === 'string' ? data[key] : data[key].bind(this)
+        }
 
         return functionSet
       }
@@ -110,7 +126,7 @@ angular.module('modelStore', [])
         thaw(changes, {
           each: (i) => {
             let change = changes[i].object
-            changedModels[change._className()] = change
+            changedModels[change._className] = change
           },
 
           done: () => {

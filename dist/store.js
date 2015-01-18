@@ -21,23 +21,25 @@ var _prototypeProperties = function (child, staticProps, instanceProps) {
   if (instanceProps) Object.defineProperties(child.prototype, instanceProps);
 };
 
-angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", function ($rootScope, thaw) {
+angular.module("modelStore", []).service("Store", ["$rootScope", function ($rootScope) {
   var thawInst,
       modelCache = {},
       anonIndex = 0;
 
   return (function () {
-    function Store() {
-      var modelName = arguments[0] === undefined ? null : arguments[0];
+    function Store(storeName) {
+      var modelName = arguments[1] === undefined ? null : arguments[1];
       var model;
 
       // Check for modelName or assign anonId
-      this.modelName = modelName ? modelName : this._anonId(anonIndex++);
+      this._modelName = modelName ? modelName : this._anonId(anonIndex++);
+      this._className = storeName;
       model = modelCache[this.modelCacheId()];
 
       // Return the model if already exists
       if (model) return model;
 
+      // Setup array for users listening to model
       this._usersListening = [];
 
       // Set up Object.observe so we can keep the modelCache updated
@@ -47,8 +49,12 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
       // Store current object in modelCache
       modelCache[this.modelCacheId()] = this;
 
-      // Init function to be extended
+      // Run init function to be overloaded
       this.init();
+
+      // cannot specify return so need to just assume object
+      //is immutable and can only call functions
+      return this._filterFunctions();
     }
 
     _prototypeProperties(Store, {
@@ -59,13 +65,29 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
         writable: true,
         enumerable: true,
         configurable: true
+      },
+      extend: {
+        value: function extend(className, data) {
+          var Model = function (modelName) {
+            return Store.call(this, className, modelName);
+          };
+
+          Model.prototype = Object.create(Store.prototype);
+          Model.constructor = Store;
+          angular.extend(Model.prototype, data);
+
+          return Model;
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
       }
     }, {
       init: {
 
-        // Init function to overload
+        // Init function, this is for overloading
         value: function init() {
-          return this._filterFunctions();
+          return this;
         },
         writable: true,
         enumerable: true,
@@ -100,17 +122,8 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
 
         // Id of model cache used for caching and default event names
         value: function modelCacheId() {
-          var name = arguments[0] === undefined ? this.modelName : arguments[0];
-          return "" + this._className() + ":" + name;
-        },
-        writable: true,
-        enumerable: true,
-        configurable: true
-      },
-      _className: {
-        value: function ClassName() {
-          var object = arguments[0] === undefined ? this : arguments[0];
-          return object.constructor.name;
+          var name = arguments[0] === undefined ? this._modelName : arguments[0];
+          return "" + this._className + ":" + name;
         },
         writable: true,
         enumerable: true,
@@ -165,7 +178,12 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
           var data = arguments[0] === undefined ? this : arguments[0];
           var functionSet = {};
 
-          for (var key in data) if (typeof data[key] === "function" && key.substr(0, 2) !== "__") functionSet[key] = angular.copy(data[key]);
+          for (var key in data) {
+            var isPrivFunction = key.substr(0, 2) !== "__" && typeof data[key] === "function",
+                isPrivString = typeof data[key] === "string" && key.substr(0, 2).match(/^_[^_]/);
+
+            if (isPrivFunction || isPrivString) functionSet[key] = typeof data[key] === "string" ? data[key] : data[key].bind(this);
+          }
 
           return functionSet;
         },
@@ -181,7 +199,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
           thaw(changes, {
             each: function (i) {
               var change = changes[i].object;
-              changedModels[change._className()] = change;
+              changedModels[change._className] = change;
             },
 
             done: function () {
@@ -219,5 +237,3 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "thaw", functio
     return Store;
   })();
 }]);
-// cannot specify return so need to just assume object
-//is immutable and can only call functions
