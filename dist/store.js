@@ -22,8 +22,7 @@ var _prototypeProperties = function (child, staticProps, instanceProps) {
 };
 
 angular.module("modelStore", []).service("Store", ["$rootScope", function ($rootScope) {
-  var thawInst,
-      modelCache = {},
+  var modelCache = {},
       anonIndex = 0;
 
   return (function () {
@@ -52,9 +51,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       // Run init function to be overloaded
       this.init();
 
-      // cannot specify return so need to just assume object
-      //is immutable and can only call functions
-      return this._filterFunctions();
+      return this;
     }
 
     _prototypeProperties(Store, {
@@ -77,7 +74,15 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
 
           Model.prototype = Object.create(Store.prototype);
           Model.constructor = Store;
-          angular.extend(Model.prototype, data);
+
+          for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
+            var _ref = _step.value;
+            var _ref2 = _slicedToArray(_ref, 2);
+
+            var key = _ref2[0];
+            var value = _ref2[1];
+            Model.prototype[key] = value;
+          }
 
           return Model;
         },
@@ -101,7 +106,8 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         // Listen to all changes on model
         value: function listen(callback) {
           // Add callback to the current classes cache in modelCache
-          modelCache[this.modelCacheId()]._usersListening.push(callback);
+          console.log("Added callback");
+          this._usersListening = this._usersListening.concat(callback);
         },
         writable: true,
         enumerable: true,
@@ -115,29 +121,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
           var data = arguments[1] === undefined ? this : arguments[1];
           // Broadcast events through the application scope only
           // passes a deep copy of the data
-          $rootScope.$broadcast(eventName, this.data(data));
-        },
-        writable: true,
-        enumerable: true,
-        configurable: true
-      },
-      data: {
-
-        // Get a copy of the data for current model
-        value: function data() {
-          var data = arguments[0] === undefined ? this : arguments[0];
-          var cloneData = {};
-
-          for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
-            var _ref = _step.value;
-            var _ref2 = _slicedToArray(_ref, 2);
-
-            var key = _ref2[0];
-            var value = _ref2[1];
-            if (key[0] !== "_" && typeof value !== "function") cloneData[key] = angular.copy(value);
-          }
-
-          return cloneData;
+          $rootScope.$broadcast(eventName, this._filterData(data));
         },
         writable: true,
         enumerable: true,
@@ -178,16 +162,33 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         enumerable: true,
         configurable: true
       },
+      _filterData: {
+
+        // Unused fN
+        value: function FilterData() {
+          var data = arguments[0] === undefined ? this : arguments[0];
+          var cloneData = {},
+              model = modelCache[data.modelCacheId()];
+
+          for (var key in model) {
+            if (key[0] !== "_" && typeof model[key] !== "function") cloneData[key] = angular.copy(model[key]);
+          }return cloneData;
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
       _filterFunctions: {
         value: function FilterFunctions() {
           var data = arguments[0] === undefined ? this : arguments[0];
-          var functionSet = {};
+          var functionSet = {},
+              model = modelCache[data.modelCacheId()];
 
-          for (var key in data) {
-            var isPrivFunction = key.substr(0, 2) !== "__" && typeof data[key] === "function",
-                isPrivString = typeof data[key] === "string" && key.substr(0, 2).match(/^_[^_]/);
+          for (var key in model) {
+            var isPrivFunction = key.substr(0, 2) !== "__" && typeof model[key] === "function",
+                isPrivString = typeof model[key] === "string" && key.substr(0, 2).match(/^_[^_]/);
 
-            if (isPrivFunction || isPrivString) functionSet[key] = typeof data[key] === "string" ? data[key] : data[key].bind(this);
+            if (isPrivFunction || isPrivString) functionSet[key] = typeof model[key] === "string" ? angular.copy(model[key]) : angular.copy(model[key].bind(this));
           }
 
           return functionSet;
@@ -200,7 +201,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         value: function ObjectChanged(changes) {
           var self = this,
               changedModels = {};
-
+          console.log("changed", changes);
           thaw(changes, {
             each: function (i) {
               var change = changes[i].object;
@@ -225,7 +226,9 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
 
           thaw(allCallbacks, {
             each: function (i) {
-              allCallbacks[i](model.modelCacheId(), model.data());
+              $rootScope.$apply(function () {
+                return allCallbacks[i](model.modelCacheId(), model._filterData());
+              });
             },
 
             done: function () {

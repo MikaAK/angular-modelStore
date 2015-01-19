@@ -1,10 +1,8 @@
 'use strict'
 
 angular.module('modelStore', [])
-
   .service('Store', ['$rootScope', ($rootScope) => {
-    var thawInst,
-        modelCache = {},
+    var modelCache = {},
         anonIndex  = 0
 
     return class Store {
@@ -21,7 +19,9 @@ angular.module('modelStore', [])
 
         Model.prototype = Object.create(Store.prototype)
         Model.constructor = Store
-        angular.extend(Model.prototype, data)
+
+        for (let [key, value] of Object.entries(data))
+          Model.prototype[key] = value
 
         return Model
       }
@@ -52,9 +52,7 @@ angular.module('modelStore', [])
         // Run init function to be overloaded
         this.init()
 
-        // cannot specify return so need to just assume object
-        //is immutable and can only call functions
-        return this._filterFunctions()
+        return this
       }
 
       // Init function, this is for overloading
@@ -65,25 +63,15 @@ angular.module('modelStore', [])
       // Listen to all changes on model
       listen(callback) {
         // Add callback to the current classes cache in modelCache
-        modelCache[this.modelCacheId()]._usersListening.push(callback)
+        console.log('Added callback')
+        this._usersListening = this._usersListening.concat(callback)
       }
 
       // Emit events along scopes
       emit(eventName = this.modelCacheId(), data = this) {
         // Broadcast events through the application scope only
         // passes a deep copy of the data
-        $rootScope.$broadcast(eventName, this.data(data))
-      }
-
-      // Get a copy of the data for current model
-      data(data = this) {
-        var cloneData = {}
-
-        for (let [key, value] of Object.entries(data))
-          if (key[0] !== '_' && typeof value !== 'function')
-            cloneData[key] = angular.copy(value)
-
-        return cloneData
+        $rootScope.$broadcast(eventName, this._filterData(data))
       }
 
       // Id of model cache used for caching and default event names
@@ -108,15 +96,28 @@ angular.module('modelStore', [])
         return anonCallbacks
       }
 
-      _filterFunctions(data = this) {
-        var functionSet = {}
+      // Unused fN
+      _filterData(data = this) {
+        var cloneData = {},
+            model     = modelCache[data.modelCacheId()]
 
-        for (let key in data) {
-          let isPrivFunction = key.substr(0, 2) !== '__' && typeof data[key] === 'function',
-              isPrivString   = typeof data[key] === 'string' && key.substr(0, 2).match(/^_[^_]/)
+        for (let key in model)
+          if (key[0] !== '_' && typeof model[key] !== 'function')
+            cloneData[key] = angular.copy(model[key])
+
+        return cloneData
+      }
+
+      _filterFunctions(data = this) {
+        var functionSet  = {},
+            model        = modelCache[data.modelCacheId()]
+
+        for (let key in model) {
+          let isPrivFunction = key.substr(0, 2) !== '__' && typeof model[key] === 'function',
+              isPrivString   = typeof model[key] === 'string' && key.substr(0, 2).match(/^_[^_]/)
 
           if (isPrivFunction || isPrivString)
-            functionSet[key] = typeof data[key] === 'string' ? data[key] : data[key].bind(this)
+            functionSet[key] = typeof model[key] === 'string' ? angular.copy(model[key]) : angular.copy(model[key].bind(this))
         }
 
         return functionSet
@@ -125,7 +126,7 @@ angular.module('modelStore', [])
       __objectChanged__(changes) {
         var self = this,
             changedModels = {}
-
+        console.log('changed', changes)
         thaw(changes, {
           each: (i) => {
             let change = changes[i].object
@@ -144,7 +145,7 @@ angular.module('modelStore', [])
 
         thaw(allCallbacks, {
           each: (i) => {
-            allCallbacks[i](model.modelCacheId(), model.data())
+            $rootScope.$apply(() => allCallbacks[i](model.modelCacheId(), model._filterData()))
           },
 
           done: () => {
