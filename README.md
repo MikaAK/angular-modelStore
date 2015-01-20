@@ -23,9 +23,13 @@ the constructor. To add stuff to the initialization overload the `init` method.
       console.log("I'm initializing")
     },
 
+    change() {
+      this.testing = 1234
+    },
+
     save() {
       this.makeApiPost()
-      this.emit('studentUpdated')
+      this.emit('studentPostMade')
     }
   })
 })
