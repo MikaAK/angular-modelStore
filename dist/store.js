@@ -26,6 +26,8 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       anonIndex = 0;
 
   return (function () {
+    // ~~~~DO NOT OVERLOAD!!!~~~~
+    // Store Constructor
     function Store(storeName) {
       var modelName = arguments[1] === undefined ? null : arguments[1];
       var model;
@@ -36,7 +38,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       model = modelCache[this.modelCacheId()];
 
       // Return the model if already exists
-      if (model) return model;
+      if (model) return model._filterFunctions();
 
       // Setup array for users listening to model
       this._usersListening = [];
@@ -51,7 +53,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       // Run init function to be overloaded
       this.init();
 
-      return this;
+      return this._filterFunctions();
     }
 
     _prototypeProperties(Store, {
@@ -103,10 +105,10 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       },
       listen: {
 
-        // Listen to all changes on model
+        // Listen to all changes on model we use this for bindings to
+        // Scope so they are constantly updated and insync with the modelCache
         value: function listen(callback) {
           // Add callback to the current classes cache in modelCache
-          console.log("Added callback");
           this._usersListening = this._usersListening.concat(callback);
         },
         writable: true,

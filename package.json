@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "description": "angular model store that allows you to share data over all instances, as well as storing all models in one location.",
   "main": "dist/store_service.js",
-  "scripts": {
-    "js": ""
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/MikaAK/angular-modelStore.git"

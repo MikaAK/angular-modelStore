@@ -26,6 +26,8 @@ angular.module('modelStore', [])
         return Model
       }
 
+      // ~~~~DO NOT OVERLOAD!!!~~~~
+      // Store Constructor
       constructor(storeName, modelName = null) {
         var model
 
@@ -36,7 +38,7 @@ angular.module('modelStore', [])
 
         // Return the model if already exists
         if (model)
-          return model
+          return model._filterFunctions()
 
         // Setup array for users listening to model
         this._usersListening = []
@@ -52,7 +54,7 @@ angular.module('modelStore', [])
         // Run init function to be overloaded
         this.init()
 
-        return this
+        return this._filterFunctions()
       }
 
       // Init function, this is for overloading
@@ -60,10 +62,10 @@ angular.module('modelStore', [])
         return this
       }
 
-      // Listen to all changes on model
+      // Listen to all changes on model we use this for bindings to
+      // Scope so they are constantly updated and insync with the modelCache
       listen(callback) {
         // Add callback to the current classes cache in modelCache
-        console.log('Added callback')
         this._usersListening = this._usersListening.concat(callback)
       }
 

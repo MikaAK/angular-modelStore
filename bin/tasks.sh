@@ -1,7 +1,7 @@
 #! /bin/bash
 if [ -z "$1" ]
   then
-  echo "You must supply tasks with an argument. One of (scss, lint, jade, js)"
+  echo "You must supply tasks with an argument. One of (build, dist:clean, dist:create, watch)"
 else
   case "$1" in
     build)
