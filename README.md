@@ -35,6 +35,17 @@ the constructor. To add stuff to the initialization overload the `init` method.
 })
 ```
 
+#### To listen
+```javascript
+var StudentModel = new Student(studentId)
+
+StudentModel.listen(function(eventName, data) {
+  $scope.test = data.testing // Update our bindings
+})
+
+StudentModel.change()
+```
+
 ### Why No Class inheritance
 Your probably wondering why I don't just use `MyStore extends Store`, the reason
 is because you cannot return values from the constructor in extended classes the
@@ -55,7 +66,7 @@ example if you wanted to listen for all changes on the Student model you would c
 
 ```javascript
 (new Student()).listen(function(eventName, data) {
-
+  // Will receive updates from every student model
 })
 ```
 

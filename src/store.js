@@ -17,7 +17,7 @@ angular.module('modelStore', [])
           return Store.call(this, className, modelName)
         }
 
-        Model.prototype = Object.create(Store.prototype)
+        Object.setPrototypeOf(Model.prototype, Store.prototype)
         Model.constructor = Store
 
         for (let [key, value] of Object.entries(data))
@@ -30,7 +30,6 @@ angular.module('modelStore', [])
       // Store Constructor
       constructor(storeName, modelName = null) {
         var model
-
         // Check for modelName or assign anonId
         this._modelName = modelName ? modelName : this._anonId(anonIndex++)
         this._className = storeName
@@ -74,6 +73,11 @@ angular.module('modelStore', [])
         // Broadcast events through the application scope only
         // passes a deep copy of the data
         $rootScope.$broadcast(eventName, this._filterData(data))
+      }
+
+      // Get a copy of the current data
+      data() {
+        return this._filterData()
       }
 
       // Id of model cache used for caching and default event names
@@ -126,9 +130,9 @@ angular.module('modelStore', [])
       }
 
       __objectChanged__(changes) {
-        var self = this,
+        var self          = this,
             changedModels = {}
-        console.log('changed', changes)
+
         thaw(changes, {
           each: (i) => {
             let change = changes[i].object
@@ -148,10 +152,6 @@ angular.module('modelStore', [])
         thaw(allCallbacks, {
           each: (i) => {
             $rootScope.$apply(() => allCallbacks[i](model.modelCacheId(), model._filterData()))
-          },
-
-          done: () => {
-            modelCache[model.modelCacheId()] = model
           }
         })
       }
