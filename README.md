@@ -35,7 +35,8 @@ the constructor. To add stuff to the initialization overload the `init` method.
 
 #### To Listen
 ```javascript
-var StudentModel = new Student(studentId)
+var StudentModel = new Student(studentId),
+    studentCopy  = StudentModel.data()
 
 StudentModel.listen(function(eventName, data) {
   $scope.test = data.testing // Update our bindings
