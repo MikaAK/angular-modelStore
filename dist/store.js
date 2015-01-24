@@ -31,7 +31,6 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
     function Store(storeName) {
       var modelName = arguments[1] === undefined ? null : arguments[1];
       var model;
-
       // Check for modelName or assign anonId
       this._modelName = modelName ? modelName : this._anonId(anonIndex++);
       this._className = storeName;
@@ -74,7 +73,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
             return Store.call(this, className, modelName);
           };
 
-          Model.prototype = Object.create(Store.prototype);
+          Object.setPrototypeOf(Model.prototype, Store.prototype);
           Model.constructor = Store;
 
           for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
@@ -124,6 +123,16 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
           // Broadcast events through the application scope only
           // passes a deep copy of the data
           $rootScope.$broadcast(eventName, this._filterData(data));
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      data: {
+
+        // Get a copy of the current data
+        value: function data() {
+          return this._filterData();
         },
         writable: true,
         enumerable: true,
@@ -203,7 +212,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         value: function ObjectChanged(changes) {
           var self = this,
               changedModels = {};
-          console.log("changed", changes);
+
           thaw(changes, {
             each: function (i) {
               var change = changes[i].object;
@@ -231,10 +240,6 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
               $rootScope.$apply(function () {
                 return allCallbacks[i](model.modelCacheId(), model._filterData());
               });
-            },
-
-            done: function () {
-              modelCache[model.modelCacheId()] = model;
             }
           });
         },

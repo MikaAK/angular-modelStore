@@ -22,9 +22,12 @@
     "6to5": "latest"
   },
   "scripts": {
-    "task": "bin/tasks.sh",
-    "start": "npm run task dist:clean && npm run task dist:create && npm run task watch",
-    "build": "npm run task dist:clean && npm run task dist:create && npm run task build"
+    "watch": "6to5 src/store.js -o dist/store.js --source-maps --watch",
+    "clean": "rm -rf dist",
+    "create": "mkdir dist",
+    "build:js": "6to5 src/store.js -o dist/store.js",
+    "start": "npm run clean && npm run task create && npm run watch",
+    "build": "npm run clean && npm run create && npm run build:js"
   },
   "homepage": "https://github.com/MikaAK/angular-modelStore"
 }
