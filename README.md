@@ -1,4 +1,4 @@
-ModelStore
+Store
 ====
 The Store is a service that allows you to create stores with immutable data.
 
