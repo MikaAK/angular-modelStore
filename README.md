@@ -59,7 +59,7 @@ scope.clone = StudentStore
   .data('students')
   .result // scope.clone.students
 
-scope.clone = StudentStore
+StudentStore
   .data(['items', 'stuff'])
   .set(this) // scope.items
 ```
@@ -69,23 +69,3 @@ Your probably wondering why I don't just use `MyStore extends Store`, the reason
 is because you cannot return values from the constructor in extended classes the
 workaround is to call super on your new class. Luckily all you need to do here is
 call it with extend and let the `modelStore` do its magic.
-
-### Anon Listeners
-Another thing you can do is setup anonymous listeners for the entire model. For
-example if you wanted to listen for all changes on the Student model you would call
-
-```javascript
-(new Student()).listen(function(eventName, data) {
-  // Will receive updates from every student model
-})
-```
-
-#### Or on a specific model
-
-```javascript
-var current = new Student('current')
-
-current.listen(function(eventName, student) {
-
-})
-```
