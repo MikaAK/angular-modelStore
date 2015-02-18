@@ -16,35 +16,41 @@ var _slicedToArray = function (arr, i) {
   }
 };
 
+var _defineProperty = function (obj, key, value) {
+  return Object.defineProperty(obj, key, {
+    value: value,
+    enumerable: true,
+    configurable: true,
+    writable: true
+  });
+};
+
 var _prototypeProperties = function (child, staticProps, instanceProps) {
   if (staticProps) Object.defineProperties(child, staticProps);
   if (instanceProps) Object.defineProperties(child.prototype, instanceProps);
 };
 
-angular.module("modelStore", []).service("Store", ["$rootScope", function ($rootScope) {
-  var modelCache = {},
-      anonIndex = 0;
+angular.module("modelStore", []).service("Store", ["$rootScope", "$interval", function ($rootScope, $interval) {
+  var modelCache = {};
 
   return (function () {
     // ~~~~DO NOT OVERLOAD!!!~~~~
     // Store Constructor
     function Store(storeName) {
-      var modelName = arguments[1] === undefined ? null : arguments[1];
       var model;
       // Check for modelName or assign anonId
-      this._modelName = modelName ? modelName : this._anonId(anonIndex++);
       this._className = storeName;
-      model = modelCache[this.modelCacheId()];
 
       // Return the model if already exists
-      if (model) return model._filterFunctions();
+      if (model = modelCache[this.modelCacheId()]) return model._filterFunctions();
 
       // Setup array for users listening to model
       this._usersListening = [];
 
+
       // Set up Object.observe so we can keep the modelCache updated
-      // without thinking about it
-      if (modelName) Object.observe(this, this.__objectChanged__);
+      // without thinking about it, as well as broadcast change events
+      Object.observe(this, this.__objectChanged__);
 
       // Store current object in modelCache
       modelCache[this.modelCacheId()] = this;
@@ -69,12 +75,12 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         // Extend the Store class, this is used over ES6 extension so we
         // can keep the return values of extended objects
         value: function extend(className, data) {
-          var Model = function (modelName) {
-            return Store.call(this, className, modelName);
+          var NewStore = function () {
+            return Store.call(this, className);
           };
 
-          Object.setPrototypeOf(Model.prototype, Store.prototype);
-          Model.constructor = Store;
+          Object.setPrototypeOf(NewStore.prototype, Store.prototype);
+          NewStore.constructor = Store;
 
           for (var _iterator = Object.entries(data)[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
             var _ref = _step.value;
@@ -82,10 +88,10 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
 
             var key = _ref2[0];
             var value = _ref2[1];
-            Model.prototype[key] = value;
+            NewStore.prototype[key] = value;
           }
 
-          return Model;
+          return NewStore;
         },
         writable: true,
         enumerable: true,
@@ -130,9 +136,63 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       },
       data: {
 
-        // Get a copy of the current data
-        value: function data() {
-          return this._filterData();
+        // Get a copy of the current data from the modelCache
+        // optionally wait for attributes that could be not there yet
+        value: function data(waitAttrs) {
+          var promiseList = null,
+              promises = [],
+              attrsWaited = {},
+              model = modelCache[this.modelCacheId()],
+              setKeyValue = function (setValue, obj) {
+            return setValue[Object.keys(obj)[0]] = Object.values(obj)[0];
+          };
+
+          // Reassign waitAttrs to an array so
+          // single wait can be used, or just return
+          // filtered data if none waiting for
+          if (waitAttrs) waitAttrs = angular.isArray(waitAttrs) ? waitAttrs : [waitAttrs];else return this._filterData(model);
+
+          // Set promises for wait attrs
+          waitAttrs.forEach(function (attr) {
+            promises.push(new Promise(function (resolve, reject) {
+              var intervalCheck = null,
+                  checkForAttribute = function () {
+                var value = model[attr],
+                    isEmptyArray = Array.isArray(value) && value.length === 0,
+                    isEmptyObject = Object.values(value) && Object.values(value).length === 0;
+
+                if (value && !isEmptyArray && !isEmptyObject) {
+                  $interval.cancel(intervalCheck);
+                  return resolve(_defineProperty({}, attr, value));
+                }
+
+                intervalCheck = $interval(checkForAttribute, 200);
+              };
+
+              return checkForAttribute();
+            }));
+          });
+
+          promiseList = Promise.all(promises);
+
+          // Set the attributes waited for to attrsWaited
+          promiseList.then(function (data) {
+            data.forEach(function (obj) {
+              return setKeyValue(attrsWaited, obj);
+            });
+          });
+
+          return {
+            result: attrsWaited,
+            set: function (obj) {
+              // This will set keys on obj to the values of the data
+              promiseList.then(function (data) {
+                data.forEach(function (dObj) {
+                  return setKeyValue(obj, dObj);
+                });
+              });
+            }
+          };
         },
         writable: true,
         enumerable: true,
@@ -142,47 +202,20 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
 
         // Id of model cache used for caching and default event names
         value: function modelCacheId() {
-          var name = arguments[0] === undefined ? this._modelName : arguments[0];
-          return "" + this._className + ":" + name;
-        },
-        writable: true,
-        enumerable: true,
-        configurable: true
-      },
-      _anonId: {
-        value: function AnonId(index) {
-          return "ANON:" + index;
-        },
-        writable: true,
-        enumerable: true,
-        configurable: true
-      },
-      _anonCallbacks: {
-        value: function AnonCallbacks() {
-          var anonCallbacks = [];
-
-          for (var i = 0; i <= anonIndex; i++) {
-            var model = modelCache[this.modelCacheId(this._anonId(i))];
-
-            if (model) anonCallbacks = anonCallbacks.concat(model._usersListening);
-          }
-
-          return anonCallbacks;
+          var modelName = arguments[0] === undefined ? this._className : arguments[0];
+          return "STORE:" + modelName;
         },
         writable: true,
         enumerable: true,
         configurable: true
       },
       _filterData: {
-
-        // Unused fN
         value: function FilterData() {
           var data = arguments[0] === undefined ? this : arguments[0];
-          var cloneData = {},
-              model = modelCache[data.modelCacheId()];
+          var cloneData = {};
 
-          for (var key in model) {
-            if (key[0] !== "_" && typeof model[key] !== "function") cloneData[key] = angular.copy(model[key]);
+          for (var key in data) {
+            if (key[0] !== "_" && typeof data[key] !== "function") cloneData[key] = angular.copy(data[key]);
           }return cloneData;
         },
         writable: true,
@@ -193,13 +226,30 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
         value: function FilterFunctions() {
           var data = arguments[0] === undefined ? this : arguments[0];
           var functionSet = {},
-              model = modelCache[data.modelCacheId()];
+              model = modelCache[data.modelCacheId()],
+              copyFns = ["_filterData", "_className", "_usersListening", "modelCacheId", "data", "listen", "emit"];
+
+          // We set these manually so ES6 Classes method's aren't
+          // enumerable
+          copyFns.forEach(function (fn) {
+            return functionSet[fn] = typeof model[fn] === "function" ? model[fn].bind(data) : model[fn];
+          });
 
           for (var key in model) {
-            var isPrivFunction = key.substr(0, 2) !== "__" && typeof model[key] === "function",
-                isPrivString = typeof model[key] === "string" && key.substr(0, 2).match(/^_[^_]/);
+            (function (key) {
+              if (!(key in functionSet)) {
+                var isNotPrivFunction = key.substr(0, 2) !== "__" && typeof model[key] === "function",
+                    isPrivString = typeof model[key] === "string" && key.substr(0, 2).match(/^_[^_]/);
 
-            if (isPrivFunction || isPrivString) functionSet[key] = typeof model[key] === "string" ? angular.copy(model[key]) : angular.copy(model[key].bind(this));
+                if (isNotPrivFunction || isPrivString) functionSet[key] = typeof model[key] === "string" ? angular.copy(model[key]) : function () {
+                  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                    args[_key] = arguments[_key];
+                  }
+
+                  return model[key].apply(data, args);
+                };
+              }
+            })(key);
           }
 
           return functionSet;
@@ -233,12 +283,10 @@ angular.module("modelStore", []).service("Store", ["$rootScope", function ($root
       __processCallbacks__: {
         value: function ProcessCallbacks() {
           var model = arguments[0] === undefined ? this : arguments[0];
-          var allCallbacks = model._usersListening.concat(model._anonCallbacks());
-
-          thaw(allCallbacks, {
+          thaw(model._usersListening, {
             each: function (i) {
               $rootScope.$apply(function () {
-                return allCallbacks[i](model.modelCacheId(), model._filterData());
+                return model._usersListening[i](model.modelCacheId(), model._filterData());
               });
             }
           });

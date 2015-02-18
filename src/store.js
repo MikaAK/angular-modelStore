@@ -1,9 +1,8 @@
 'use strict'
 
 angular.module('modelStore', [])
-  .service('Store', ['$rootScope', ($rootScope) => {
-    var modelCache = {},
-        anonIndex  = 0
+  .service('Store', ['$rootScope', '$interval', ($rootScope, $interval) => {
+    var modelCache = {}
 
     return class Store {
       static __modelCache__() {
@@ -13,39 +12,37 @@ angular.module('modelStore', [])
       // Extend the Store class, this is used over ES6 extension so we
       // can keep the return values of extended objects
       static extend(className, data) {
-        var Model = function(modelName) {
-          return Store.call(this, className, modelName)
+        var NewStore = function() {
+          return Store.call(this, className)
         }
 
-        Object.setPrototypeOf(Model.prototype, Store.prototype)
-        Model.constructor = Store
+        Object.setPrototypeOf(NewStore.prototype, Store.prototype)
+        NewStore.constructor = Store
 
         for (let [key, value] of Object.entries(data))
-          Model.prototype[key] = value
+            NewStore.prototype[key] = value
 
-        return Model
+        return NewStore
       }
 
       // ~~~~DO NOT OVERLOAD!!!~~~~
       // Store Constructor
-      constructor(storeName, modelName = null) {
+      constructor(storeName) {
         var model
         // Check for modelName or assign anonId
-        this._modelName = modelName ? modelName : this._anonId(anonIndex++)
         this._className = storeName
-        model = modelCache[this.modelCacheId()]
 
         // Return the model if already exists
-        if (model)
+        if ((model = modelCache[this.modelCacheId()]))
           return model._filterFunctions()
 
         // Setup array for users listening to model
         this._usersListening = []
 
+
         // Set up Object.observe so we can keep the modelCache updated
-        // without thinking about it
-        if (modelName)
-          Object.observe(this, this.__objectChanged__)
+        // without thinking about it, as well as broadcast change events
+        Object.observe(this, this.__objectChanged__)
 
         // Store current object in modelCache
         modelCache[this.modelCacheId()] = this
@@ -75,55 +72,97 @@ angular.module('modelStore', [])
         $rootScope.$broadcast(eventName, this._filterData(data))
       }
 
-      // Get a copy of the current data
-      data() {
-        return this._filterData()
+      // Get a copy of the current data from the modelCache
+      // optionally wait for attributes that could be not there yet
+      data(waitAttrs) {
+        var promiseList = null,
+            promises    = [],
+            attrsWaited = {},
+            model       = modelCache[this.modelCacheId()],
+            setKeyValue = (setValue, obj) => setValue[Object.keys(obj)[0]] = Object.values(obj)[0]
+
+        // Reassign waitAttrs to an array so
+        // single wait can be used, or just return
+        // filtered data if none waiting for
+        if (waitAttrs)
+          waitAttrs = angular.isArray(waitAttrs) ? waitAttrs : [waitAttrs]
+        else
+          return this._filterData(model)
+
+        // Set promises for wait attrs
+        waitAttrs.forEach(attr => {
+          promises.push(new Promise((resolve, reject) => {
+            var intervalCheck     = null,
+                checkForAttribute = () => {
+                  var value         = model[attr],
+                      isEmptyArray  = Array.isArray(value) && value.length === 0,
+                      isEmptyObject = Object.values(value) && Object.values(value).length === 0
+
+                  if (value && !isEmptyArray && !isEmptyObject) {
+                    $interval.cancel(intervalCheck)
+                    return resolve({[attr]: value})
+                  }
+
+                  intervalCheck = $interval(checkForAttribute, 200)
+                }
+
+            return checkForAttribute()
+          }))
+        })
+
+        promiseList = Promise.all(promises)
+
+        // Set the attributes waited for to attrsWaited
+        promiseList.then(data => {
+          data.forEach(obj => setKeyValue(attrsWaited, obj))
+        })
+
+        return {
+          result: attrsWaited,
+          set: function(obj) {
+            // This will set keys on obj to the values of the data
+            promiseList.then(data => {
+              data.forEach(dObj => setKeyValue(obj, dObj))
+            })
+          }
+        }
       }
 
       // Id of model cache used for caching and default event names
-      modelCacheId(name = this._modelName) {
-        return `${this._className}:${name}`
+      modelCacheId(modelName = this._className) {
+        return `STORE:${modelName}`
       }
 
-      _anonId(index) {
-        return `ANON:${index}`
-      }
-
-      _anonCallbacks() {
-        var anonCallbacks = []
-
-        for (let i = 0; i <= anonIndex; i++) {
-          let model = modelCache[this.modelCacheId(this._anonId(i))]
-
-          if (model)
-            anonCallbacks = anonCallbacks.concat(model._usersListening)
-        }
-
-        return anonCallbacks
-      }
-
-      // Unused fN
       _filterData(data = this) {
-        var cloneData = {},
-            model     = modelCache[data.modelCacheId()]
+        var cloneData = {}
 
-        for (let key in model)
-          if (key[0] !== '_' && typeof model[key] !== 'function')
-            cloneData[key] = angular.copy(model[key])
+        for (let key in data)
+          if (key[0] !== '_' && typeof data[key] !== 'function')
+            cloneData[key] = angular.copy(data[key])
 
         return cloneData
       }
 
       _filterFunctions(data = this) {
-        var functionSet  = {},
-            model        = modelCache[data.modelCacheId()]
+        var functionSet = {},
+            model       = modelCache[data.modelCacheId()],
+            copyFns     = [
+              '_filterData', '_className', '_usersListening',
+              'modelCacheId', 'data', 'listen', 'emit',]
+
+        // We set these manually so ES6 Classes method's aren't
+        // enumerable
+        copyFns.forEach((fn) => functionSet[fn] = typeof model[fn] === 'function' ? model[fn].bind(data) : model[fn])
 
         for (let key in model) {
-          let isPrivFunction = key.substr(0, 2) !== '__' && typeof model[key] === 'function',
-              isPrivString   = typeof model[key] === 'string' && key.substr(0, 2).match(/^_[^_]/)
+          if (!(key in functionSet)) {
 
-          if (isPrivFunction || isPrivString)
-            functionSet[key] = typeof model[key] === 'string' ? angular.copy(model[key]) : angular.copy(model[key].bind(this))
+            let isNotPrivFunction = key.substr(0, 2) !== '__' && typeof model[key] === 'function',
+                isPrivString   = typeof model[key] === 'string' && key.substr(0, 2).match(/^_[^_]/)
+
+            if (isNotPrivFunction || isPrivString)
+              functionSet[key] = typeof model[key] === 'string' ? angular.copy(model[key]) : (...args) => {return model[key].apply(data, args)}
+          }
         }
 
         return functionSet
@@ -134,7 +173,7 @@ angular.module('modelStore', [])
             changedModels = {}
 
         thaw(changes, {
-          each: (i) => {
+          each: i => {
             let change = changes[i].object
             changedModels[change._className] = change
           },
@@ -147,11 +186,9 @@ angular.module('modelStore', [])
       }
 
       __processCallbacks__(model = this) {
-        var allCallbacks = model._usersListening.concat(model._anonCallbacks())
-
-        thaw(allCallbacks, {
-          each: (i) => {
-            $rootScope.$apply(() => allCallbacks[i](model.modelCacheId(), model._filterData()))
+        thaw(model._usersListening, {
+          each: i => {
+            $rootScope.$apply(() => model._usersListening[i](model.modelCacheId(), model._filterData()))
           }
         })
       }
