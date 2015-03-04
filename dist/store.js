@@ -149,7 +149,8 @@ angular.module("angular-store", []).service("Store", ["$rootScope", "$interval",
         // Get a copy of the current data from the modelCache
         // optionally wait for attributes that could be not there yet
         value: function data(waitAttrs) {
-          var promiseList = null,
+          var self = this,
+              promiseList = null,
               promises = [],
               attrsWaited = {},
               model = modelCache[this.modelCacheId()],
@@ -169,9 +170,9 @@ angular.module("angular-store", []).service("Store", ["$rootScope", "$interval",
                   checkForAttribute = function () {
                 var value = model[attr],
                     isEmptyArray = Array.isArray(value) && value.length === 0,
-                    isEmptyObject = Object.values(value) && Object.values(value).length === 0;
+                    isEmptyObject = typeof value === "object" && Object.values(value) && Object.values(value).length === 0;
 
-                if (value && !isEmptyArray && !isEmptyObject) {
+                if (angular.isDefined(value) && !isEmptyArray && !isEmptyObject) {
                   $interval.cancel(intervalCheck);
                   return resolve(_defineProperty({}, attr, value));
                 }
@@ -193,13 +194,16 @@ angular.module("angular-store", []).service("Store", ["$rootScope", "$interval",
           });
 
           return {
-            result: attrsWaited,
-            set: function (obj) {
+            result: this._filterData(attrsWaited),
+            set: function set(obj) {
               // This will set keys on obj to the values of the data
+              var resObj = {};
+
               promiseList.then(function (data) {
                 data.forEach(function (dObj) {
-                  return setKeyValue(obj, dObj);
+                  return setKeyValue(resObj, dObj);
                 });
+                angular.extend(obj, self._filterData(resObj));
               });
             }
           };

@@ -80,7 +80,8 @@ angular.module('angular-store', [])
       // Get a copy of the current data from the modelCache
       // optionally wait for attributes that could be not there yet
       data(waitAttrs) {
-        var promiseList = null,
+        var self        = this,
+            promiseList = null,
             promises    = [],
             attrsWaited = {},
             model       = modelCache[this.modelCacheId()],
@@ -101,9 +102,9 @@ angular.module('angular-store', [])
                 checkForAttribute = () => {
                   var value         = model[attr],
                       isEmptyArray  = Array.isArray(value) && value.length === 0,
-                      isEmptyObject = Object.values(value) && Object.values(value).length === 0
+                      isEmptyObject = typeof value === 'object' && Object.values(value) && Object.values(value).length === 0
 
-                  if (value && !isEmptyArray && !isEmptyObject) {
+                  if (angular.isDefined(value) && !isEmptyArray && !isEmptyObject) {
                     $interval.cancel(intervalCheck)
                     return resolve({[attr]: value})
                   }
@@ -123,11 +124,14 @@ angular.module('angular-store', [])
         })
 
         return {
-          result: attrsWaited,
-          set: function(obj) {
+          result: this._filterData(attrsWaited),
+          set(obj) {
             // This will set keys on obj to the values of the data
+            var resObj = {}
+
             promiseList.then(data => {
-              data.forEach(dObj => setKeyValue(obj, dObj))
+              data.forEach(dObj => setKeyValue(resObj, dObj))
+              angular.extend(obj, self._filterData(resObj))
             })
           }
         }

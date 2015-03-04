@@ -89,3 +89,16 @@ current.listen(function(eventName, student) {
 
 })
 ```
+
+### What about transforming the data before we recieve the listen cbs
+You can overide the default `transformFn` in your class, this allows you to change any data before you recieve your clone
+
+```javascript
+{
+  transformFn(data) {
+    data.currentCalcs = data.currentCalcs + 40 * 2
+    data.totalMoney   = data.totalMoney + data.currentCalcs
+
+    return data
+  }
+}
