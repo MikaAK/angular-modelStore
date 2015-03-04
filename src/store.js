@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('modelStore', [])
+angular.module('angular-store', [])
   .service('Store', ['$rootScope', '$interval', ($rootScope, $interval) => {
     var modelCache = {}
 
@@ -56,6 +56,11 @@ angular.module('modelStore', [])
       // Init function, this is for overloading
       init() {
         return this
+      }
+
+      // Transforming function to overload before listeners or data is returned
+      transformFn(data) {
+        return data
       }
 
       // Listen to all changes on model we use this for bindings to
@@ -140,15 +145,17 @@ angular.module('modelStore', [])
           if (key[0] !== '_' && typeof data[key] !== 'function')
             cloneData[key] = angular.copy(data[key])
 
-        return cloneData
+        return this.transformFn(cloneData)
       }
 
       _filterFunctions(data = this) {
         var functionSet = {},
             model       = modelCache[data.modelCacheId()],
             copyFns     = [
-              '_filterData', '_className', '_usersListening',
-              'modelCacheId', 'data', 'listen', 'emit',]
+              '_filterData', '_className',
+              '_usersListening', 'modelCacheId',
+              'data', 'listen', 'emit'
+            ]
 
         // We set these manually so ES6 Classes method's aren't
         // enumerable

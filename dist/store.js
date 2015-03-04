@@ -30,7 +30,7 @@ var _prototypeProperties = function (child, staticProps, instanceProps) {
   if (instanceProps) Object.defineProperties(child.prototype, instanceProps);
 };
 
-angular.module("modelStore", []).service("Store", ["$rootScope", "$interval", function ($rootScope, $interval) {
+angular.module("angular-store", []).service("Store", ["$rootScope", "$interval", function ($rootScope, $interval) {
   var modelCache = {};
 
   return (function () {
@@ -103,6 +103,16 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "$interval", fu
         // Init function, this is for overloading
         value: function init() {
           return this;
+        },
+        writable: true,
+        enumerable: true,
+        configurable: true
+      },
+      transformFn: {
+
+        // Transforming function to overload before listeners or data is returned
+        value: function transformFn(data) {
+          return data;
         },
         writable: true,
         enumerable: true,
@@ -216,7 +226,7 @@ angular.module("modelStore", []).service("Store", ["$rootScope", "$interval", fu
 
           for (var key in data) {
             if (key[0] !== "_" && typeof data[key] !== "function") cloneData[key] = angular.copy(data[key]);
-          }return cloneData;
+          }return this.transformFn(cloneData);
         },
         writable: true,
         enumerable: true,
