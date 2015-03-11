@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('angular-store', [])
+angular.module('angular-data', [])
   .service('Store', ['$rootScope', '$interval', ($rootScope, $interval) => {
     var modelCache = {}
 
