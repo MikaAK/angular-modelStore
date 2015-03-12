@@ -1,5 +1,18 @@
 "use strict";
 
+angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
+  return {
+    createActions: function createActions(actionList) {
+      return Action.createFromList(actionList);
+    },
+
+    createStore: function createStore(data) {
+      return new Store(data);
+    }
+  };
+}]);
+"use strict";
+
 var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
@@ -70,19 +83,6 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
 
     return Action;
   })();
-}]);
-"use strict";
-
-angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
-  return {
-    createActions: function createActions(actionList) {
-      return Action.createFromList(actionList);
-    },
-
-    createStore: function createStore(data) {
-      return new Store(data);
-    }
-  };
 }]);
 "use strict";
 
