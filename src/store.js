@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('store-angular')
+angular.module('not-flux')
   .service('Store', ['$rootScope', '$interval', ($rootScope, $interval) => {
     return class Store {
       // Store Constructor

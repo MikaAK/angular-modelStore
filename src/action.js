@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('store-angular')
+angular.module('not-flux')
   .service('Action', ['$rootScope', ($rootScope) => {
     return class Action {
       static createFromList(actionList) {

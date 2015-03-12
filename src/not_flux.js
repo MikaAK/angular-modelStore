@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('store-angular', [])
+angular.module('not-flux', [])
   .factory('NotFlux', ['Store', 'Action', (Store, Action) => {
     return {
       createActions(actionList) {
