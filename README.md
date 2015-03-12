@@ -69,7 +69,6 @@ Your probably wondering why I don't just use `MyStore extends Store`, the reason
 is because you cannot return values from the constructor in extended classes the
 workaround is to call super on your new class. Luckily all you need to do here is
 call it with extend and let the `modelStore` do its magic.
-<<<<<<< HEAD
 
 ### Anon Listeners
 Another thing you can do is setup anonymous listeners for the entire model. For
