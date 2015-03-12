@@ -19,7 +19,8 @@
     "url": "https://github.com/MikaAK/angular-modelStore/issues"
   },
   "devDependencies": {
-    "6to5": "latest"
+    "6to5": "latest",
+    "jsdoc": "latest"
   },
   "scripts": {
     "watch": "6to5 src/store.js -o dist/store.js --source-maps --watch",
