@@ -39,9 +39,13 @@ angular.module('angular-data', [])
 
       // Listen to all changes on model we use this for bindings to
       // Scope so they are constantly updated and in sync with the modelCache
-      listen(callback) {
+      listen(scope, callback) {
+        if (!scope || !callback)
+          throw new Error('You must provide a callback and scope')
+
+        scope.$on('$destroy', () => this._usersListening.splice(this._usersListening.indexOf(callback), 1))
         // Add callback to the current classes cache in modelCache
-        this._usersListening = this._usersListening.concat(callback)
+        this._usersListening.push(callback)
       }
 
       // Emit events along scopes
