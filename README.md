@@ -1,104 +1,135 @@
-Store
-====
-The Store is a service that allows you to create stores with immutable data.
+Not Flux
+===
 
-Event's can also be emitted from inside the store and will broadcast throughout the app
+### What is Not Flux
+It's a flux library :) Implemented in angular to provide a quick flux pattern without having to worry about using `emitChange` everywhere
 
-### Dependancies
-The only has two dependancies [thaw.js](robertleeplummerjr.github.io/thaw.js/) and
-the `browser-polyfill` from `6to5` (inside the `vendor/` directory).
-thaw.js allows us to run all callbacks at a browser convientent time.
 
-### Usage
-Create a new service and extend the Store onto it. Be careful not to override
-the constructor. To add stuff to the initialization overload the `init` method.
+### Features
 
-#### EG
+- Actions and Stores
+- Stores emit clones
+- NO EMIT CHANGE!!
+
+## Examples
+
+### Creating a store
+
 ```javascript
-.service('Students', function() {
-  return Store.extend('Students', {
-    items: [],
+.factory('SettingsStore', ['NotFlux', function(NotFlux) {
+  return NotFlux.createStore({
+    myInfo: {hello: 'world'},
+    userId: 4,
 
-    init() {
-      console.log("I'm initializing")
+    modifyInfo: function(id, info) {
+      this.myInfo.hello = 'bill' + info
+
+      // Emit events through the app!
+      this.emit('myEvent', this.myInfo)
     },
 
-    get() {
-      // some asyncronus get
-    },
-
-    change() {
-      this.testing = 1234
-    },
-
-    save() {
-      this.makeApiPost()
-      this.emit('studentPostMade')
+    changeUserId: function(id) {
+      this.userId = id
     }
   })
+}])
+```
+
+### Creating actions
+```javascript
+.factory('SettingsActions', ['NotFlux', function(NotFlux) {
+  return NotFlux.createActions([
+    'setUserId',
+    'changeInfo'
+  ])
+}])
+```
+
+### Linking Actions to Stores
+```javascript
+.factory('SettingsStore', ['NotFlux', 'SettingsActions', function(NotFlux, SettingsActions) {
+  return NotFlux.createStore({
+    myInfo: {hello: 'world'},
+    userId: 4,
+
+    init: function() {
+      // We set the action to listen to the
+      // changeUserId callback from the store
+      SettingsActions.setUserId.listenTo(this.changeUserId)
+
+      // We can even define multiple handlers
+      SettingsActions.changeInfo.listenTo([this.modifyInfo, this.changeUserId])
+    },
+
+    modifyInfo: function(id, info) {
+      this.myInfo.hello = 'bill' + info
+    },
+
+    changeUserId: function(id) {
+      this.userId = id
+    }
+  })
+}])
+```
+
+### Linking up the view
+```javascript
+// We must load up the store as well as the actions. This is
+// so the store can be initialzed! You only
+// need to initialize a store in one location
+// though it will not effect anything doing so in multiple places
+.controller('myCtrl', ['$scope', 'SettingsStore', 'SettingsActions', function($scope, SettingsStore, SettingsActions) {
+
+  // Call bindTo to update the view on changes
+  SettingsStore.bindTo($scope, function(data) {
+    $scope.userId = data.userId
+  })
+
+  $scope.onClick = function() {
+    // Call an action which will change the store
+    SettingsActions.changeUserId(5)
+  }
 })
 ```
 
-#### To Listen
+
+
+# Methods
+
+## Store
+
+## Outside the definition
+### `.bindTo($scope, cb)`
+This is for binding to the data of a store. To modify the datastream we can use `tranformFn`
+
+## Inside the definition
+### `.transformFn(data)`
+This is so you can modify the outgoing stream from the store.
+IE.
 ```javascript
-var StudentStore = new Student(),
-    studentCopy  = StudentStore.data()
+NotFlux.createStore({
 
-StudentStore.listen(function(eventName, data) {
-  $scope.test = data.testing // Update our bindings
-})
-
-StudentStore.change()
-```
-
-#### Cloning Unresolved data
-```javascript
-var StudentStore = new Students()
-
-scope.clone = StudentStore
-  .data('students')
-  .result // scope.clone.students
-
-StudentStore
-  .data(['items', 'stuff'])
-  .set(this) // scope.items
-```
-
-### Why No Class inheritance
-Your probably wondering why I don't just use `MyStore extends Store`, the reason
-is because you cannot return values from the constructor in extended classes the
-workaround is to call super on your new class. Luckily all you need to do here is
-call it with extend and let the `modelStore` do its magic.
-
-### Anon Listeners
-Another thing you can do is setup anonymous listeners for the entire model. For
-example if you wanted to listen for all changes on the Student model you would call
-
-```javascript
-(new Student()).listen(function(eventName, data) {
-  // Will receive updates from every student model
-})
-```
-
-#### Or on a specific model
-
-```javascript
-var current = new Student('current')
-
-current.listen(function(eventName, student) {
-
-})
-```
-
-### What about transforming the data before we recieve the listen cbs
-You can overide the default `transformFn` in your class, this allows you to change any data before you recieve your clone
-
-```javascript
-{
-  transformFn(data) {
-    data.currentCalcs = data.currentCalcs + 40 * 2
-    data.totalMoney   = data.totalMoney + data.currentCalcs
+  // Data received by bindTo will have be +500
+  transformFn: function(data) {
+    data.userId += 500
 
     return data
   }
-}
+})
+```
+
+
+### `.emit(data)`
+Use this to emit system wide events
+IE.
+```javascript
+NotFlux.createStore({
+  myFn: function(data) {
+    this.emit('hello', data)
+  }
+})
+
+$scope.$on('hello', function(data) {
+  console.log(data)
+})
+```

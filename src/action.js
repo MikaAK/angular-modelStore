@@ -2,19 +2,7 @@
 
 angular.module('not-flux')
   .service('Action', ['$rootScope', ($rootScope) => {
-    /**
-     * Representation of a action that we use to trigger store events
-     * @class
-     * @param {string} actionName - The action name
-     * @returns An callback representing that action
-     **/
     return class Action {
-      /**
-       * Create a bunch of new actions usign an array
-       * @func
-       * @param {array} actionList - An array of actionNames to create
-       * @returns A object with actions
-       **/
       static createFromList(actionList) {
         if (!angular.isArray(actionList)) throw new Error('You must pass actions an array')
 
