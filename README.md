@@ -55,10 +55,10 @@ It's a flux library :) Implemented in angular to provide a quick flux pattern wi
     init: function() {
       // We set the action to listen to the
       // changeUserId callback from the store
-      SettingsActions.setUserId.listenTo(this.changeUserId)
+      SettingsActions.setUserId.listen(this.changeUserId)
 
       // We can even define multiple handlers
-      SettingsActions.changeInfo.listenTo([this.modifyInfo, this.changeUserId])
+      SettingsActions.changeInfo.listen([this.modifyInfo, this.changeUserId])
     },
 
     modifyInfo: function(id, info) {
@@ -97,12 +97,22 @@ It's a flux library :) Implemented in angular to provide a quick flux pattern wi
 # Methods
 
 ## Store
-
 ## Outside the definition
 ### `.bindTo($scope, cb)`
 This is for binding to the data of a store. To modify the datastream we can use `tranformFn`
 
 ## Inside the definition
+### `.init`
+A method to overload for initialization of the store. Used to bind actions.
+```
+init: function() {
+  // Set `setUserId` to run store.changedUserId 
+  SettingsActions.setUserId.listen(this.changeUserId)
+
+  // We can even define multiple handlers
+  SettingsActions.changeInfo.listen([this.modifyInfo, this.changeUserId])
+},
+```
 ### `.transformFn(data)`
 This is so you can modify the outgoing stream from the store.
 IE.
@@ -118,7 +128,6 @@ NotFlux.createStore({
 })
 ```
 
-
 ### `.emit(data)`
 Use this to emit system wide events
 IE.
@@ -133,3 +142,7 @@ $scope.$on('hello', function(data) {
   console.log(data)
 })
 ```
+
+## Actions
+### `Actions.{name}.listen(handler)`
+Setup a listener for an action

@@ -20,7 +20,7 @@ angular.module('not-flux')
         this.name       = actionName
         this._listeners = []
 
-        newAction.listenTo = this.listenTo.bind(this)
+        newAction.listen = this.listen.bind(this)
 
         return newAction
       }
@@ -30,7 +30,7 @@ angular.module('not-flux')
        * @func
        * @param {function} callback - A single callback or an array of callbacks
        **/
-      listenTo(callback) {
+      listen(callback) {
         this._listeners = this._listeners.concat(callback)
       }
 
