@@ -26,7 +26,7 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
       this.name = actionName;
       this._listeners = [];
 
-      newAction.listenTo = this.listenTo.bind(this);
+      newAction.listen = this.listen.bind(this);
 
       return newAction;
     }
@@ -48,7 +48,7 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
         configurable: true
       }
     }, {
-      listenTo: {
+      listen: {
 
         /**
          * Add a callback as a listener to an action
@@ -56,7 +56,7 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
          * @param {function} callback - A single callback or an array of callbacks
          **/
 
-        value: function listenTo(callback) {
+        value: function listen(callback) {
           this._listeners = this._listeners.concat(callback);
         },
         writable: true,
