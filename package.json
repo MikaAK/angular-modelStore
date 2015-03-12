@@ -19,15 +19,15 @@
     "url": "https://github.com/MikaAK/angular-modelStore/issues"
   },
   "devDependencies": {
-    "6to5": "latest"
+    "babel": "latest"
   },
   "scripts": {
-    "watch": "6to5 src/store.js -o dist/store.js --source-maps --watch",
-    "clean": "rm -rf dist",
-    "create": "mkdir dist",
-    "build:js": "6to5 src/store.js -o dist/store.js",
-    "start": "npm run clean && npm run task create && npm run watch",
-    "build": "npm run clean && npm run create && npm run build:js"
+    "watch":    "babel src/ --out-file dist/notFlux.js --source-maps --watch",
+    "clean":    "rm -rf dist",
+    "create":   "mkdir dist",
+    "build:js": "babel src/ --out-file dist/notFlux.js",
+    "start":    "npm run clean && npm run task create && npm run watch",
+    "build":    "npm run clean && npm run create && npm run build:js"
   },
   "homepage": "https://github.com/MikaAK/angular-modelStore"
 }
