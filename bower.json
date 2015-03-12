@@ -5,7 +5,9 @@
     "MikaAK <mikakalathil@gmail.com>"
   ],
   "description": "Another store for angularjs, uses a really simple flow that only requires a simple definition. this depends on the browser polyfill from 6to5",
-  "main": ["dist/notFlux.js"],
+  "main": [
+    "dist/notFlux.js"
+  ],
   "moduleType": [
     "es6"
   ],
@@ -25,7 +27,7 @@
     "tests"
   ],
   "dependencies": {
-    "thaw.js": "1.2.x",
-    "angular": "1.3.x"
+    "thaw.js": "~1.2.x",
+    "angular": "~1.3.x"
   }
 }
