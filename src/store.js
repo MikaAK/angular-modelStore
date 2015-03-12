@@ -1,25 +1,19 @@
 'use strict'
 
-angular.module('angular-data', [])
+angular.module('store-angular')
   .service('Store', ['$rootScope', '$interval', ($rootScope, $interval) => {
     return class Store {
-      // Create the Store class, this is used over ES6 extension so we
-      // can keep the return values of extended objects
-      static create(data) {
-        return new Store(data)
-      }
-
       // Store Constructor
       constructor(data) {
         // Setup array for users listening to model
-        this._usersListening = []
+        this._changeListeners  = []
 
         // Extend the new data into the class
         angular.extend(this, data)
 
         // Set up Object.observe so we can keep the modelCache updated
         // without thinking about it, as well as broadcast change events
-        Object.observe(this, this.__objectChanged__)
+        Object.observe(this, this._objectChanged)
 
         // Run init function to be overloaded
         this.init()
@@ -37,15 +31,18 @@ angular.module('angular-data', [])
         return data
       }
 
-      // Listen to all changes on model we use this for bindings to
-      // Scope so they are constantly updated and in sync with the modelCache
-      listen(scope, callback) {
+      // Bind to the data in the store, pass the scope so the callback is destroyed when the scope is
+      bindTo(scope, callback) {
         if (!scope || !callback)
           throw new Error('You must provide a callback and scope')
 
-        scope.$on('$destroy', () => this._usersListening.splice(this._usersListening.indexOf(callback), 1))
+
+
+        // Destroy the callback when scope is gone
+        scope.$on('$destroy', () => this._changeListeners.splice(this._changeListeners.indexOf(callback), 1))
+
         // Add callback to the current classes cache in modelCache
-        this._usersListening.push(callback)
+        this._changeListeners.push(callback)
       }
 
       // Emit events along scopes
@@ -125,37 +122,18 @@ angular.module('angular-data', [])
 
       _filterFunctions() {
         var functionSet = {},
-            copyFns     = [
-              '_filterData', '_actionName',
-              'data', 'listen'
-            ]
+            copyFns     = ['data', 'bindTo']
 
         // We set these manually so ES6 Classes method's aren't
         // enumerable
-        copyFns.forEach((fn) => functionSet[fn] = typeof this[fn] === 'function' ? this[fn].bind(this) : this[fn])
-
-        for (let key in this) {
-          if (!(key in functionSet)) {
-            let isPrivFunction = typeof this[key] === 'function' && key.substr(0, 1) === '_'
-
-            if (!isPrivFunction)
-              if (typeof this[key] !== 'function')
-                functionSet[key] = angular.copy(this[key])
-              else
-                functionSet[key] = (...args) =>  this[key].apply(this, args)
-          }
-        }
+        copyFns.forEach(fn => functionSet[fn] = typeof this[fn] === 'function' ? this[fn].bind(this) : this[fn])
 
         return functionSet
       }
 
-      _actionName(action) {
-        debugger
-      }
-
-      __objectChanged__(changes) {
+      _objectChanged(changes) {
         var object    = changes[changes.length - 1].object,
-            listeners = object._usersListening
+            listeners = object._changeListeners
 
         if (listeners.length)
           thaw(listeners, {

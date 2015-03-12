@@ -1,10 +1,10 @@
 {
-  "name": "modelStore",
+  "name": "store-angular",
   "version": "0.0.2",
   "authors": [
     "MikaAK <mikakalathil@gmail.com>"
   ],
-  "description": "A model store for angularjs this depends on the browser polyfill from 6to5",
+  "description": "Another store for angularjs, uses a really simple flow that only requires a simple definition. this depends on the browser polyfill from 6to5",
   "main": "dist/store.js",
   "moduleType": [
     "es6"
