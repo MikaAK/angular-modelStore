@@ -16,7 +16,7 @@ var helpers = {
         }
       }
     },
-    babelHelpers = (babel && angular.extend(helpers, babelHelpers)) || helpers
+    babelHelpers = (babelHelpers && angular.extend(helpers, babelHelpers)) || helpers
 
 angular.module('not-flux', [])
   .factory('NotFlux', ['Store', 'Action', (Store, Action) => {
