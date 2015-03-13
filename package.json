@@ -1,11 +1,11 @@
 {
-  "name": "modelStore",
+  "name": "not-flux",
   "version": "0.0.1",
   "description": "angular model store that allows you to share data over all instances, as well as storing all models in one location.",
-  "main": "dist/store_service.js",
+  "main": "dist/notFlux.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MikaAK/angular-modelStore.git"
+    "url": "https://github.com/MikaAK/not-flux.git"
   },
   "keywords": [
     "angular",
@@ -16,7 +16,7 @@
   "author": "Mika Kalathil",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/MikaAK/angular-modelStore/issues"
+    "url": "https://github.com/MikaAK/not-flux/issues"
   },
   "devDependencies": {
     "babel": "latest"
@@ -29,5 +29,5 @@
     "start":    "npm run clean && npm run task create && npm run watch",
     "build":    "npm run clean && npm run create && npm run build:js"
   },
-  "homepage": "https://github.com/MikaAK/angular-modelStore"
+  "homepage": "https://github.com/MikaAK/not-flux"
 }
