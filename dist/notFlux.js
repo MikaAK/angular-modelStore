@@ -1,6 +1,6 @@
 "use strict";
 
-var babelHelpers = babelHelpers || {
+var helpers = {
   prototypeProperties: function prototypeProperties(child, staticProps, instanceProps) {
     if (staticProps) Object.defineProperties(child, staticProps);
     if (instanceProps) Object.defineProperties(child.prototype, instanceProps);
@@ -15,7 +15,8 @@ var babelHelpers = babelHelpers || {
       throw new TypeError("Cannot call a class as a function");
     }
   }
-};
+},
+    babelHelpers = babel && angular.extend(helpers, babelHelpers) || helpers;
 
 angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
   return {
