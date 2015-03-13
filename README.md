@@ -108,6 +108,32 @@ It's a flux library :) Implemented in angular to provide a quick flux pattern wi
 ### `.bindTo($scope, cb)`
 This is for binding to the data of a store. To modify the datastream we can use `tranformFn`
 
+### `.data(waitedAttrs)`
+This allows you to pull a clone of the data from the store. You can optionally pass it a single string
+or an array of strings to clone it once it's been filled but this required you to set it to null for initialization.
+
+IE.
+```javascript
+.factory('MyStore', function() {
+  return NotFlux.createStore({
+    // We must set these to null or else we can't tell when they get changed!
+    myData: null,
+    waiting: null,
+  
+    set: function() {
+      this.myData = 'Hello world'
+      this.waiting = {hi: 'bill'}
+    }
+  })
+})
+
+// hello.myData will contain the result
+$scope.hello = MyStore.data('myData').result
+
+// Sets $scope.myData and $scope.waiting to the data from the store once its resolved
+MyStore.data(['myData', 'waiting']).set($scope)
+```
+
 ## Inside the definition
 ### `.init`
 A method to overload for initialization of the store. Used to bind actions.
