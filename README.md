@@ -10,6 +10,7 @@ It's a flux library :) Implemented in angular to provide a quick flux pattern wi
 - Actions and Stores
 - Stores emit clones
 - NO EMIT CHANGE!!
+- Can have private functions/methods
 
 ## Examples
 
@@ -20,6 +21,12 @@ It's a flux library :) Implemented in angular to provide a quick flux pattern wi
   return NotFlux.createStore({
     myInfo: {hello: 'world'},
     userId: 4,
+    _privateData: 2,
+
+    // Prefix methods or data with a _ to keep them off of what actions can bind to
+    _myPrivateStuff: function() {
+
+    },
 
     modifyInfo: function(id, info) {
       this.myInfo.hello = 'bill' + info
@@ -106,7 +113,7 @@ This is for binding to the data of a store. To modify the datastream we can use 
 A method to overload for initialization of the store. Used to bind actions.
 ```
 init: function() {
-  // Set `setUserId` to run store.changedUserId 
+  // Set `setUserId` to run store.changedUserId
   SettingsActions.setUserId.listen(this.changeUserId)
 
   // We can even define multiple handlers
