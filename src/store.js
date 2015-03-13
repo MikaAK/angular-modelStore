@@ -9,7 +9,9 @@ angular.module('not-flux')
         this._changeListeners  = []
 
         // Extend the new data into the class
-        angular.extend(this, data)
+        angular.extend(this, this._pullData(data))
+        // Extend the new functions into the store
+        angular.extend(this, this._filterFunctions(data))
 
         // Set up Object.observe so we can keep the modelCache updated
         // without thinking about it, as well as broadcast change events
@@ -110,23 +112,43 @@ angular.module('not-flux')
         }
       }
 
+      _pullData(data) {
+        var dataList = {}
+
+        Object.keys(data).forEach(itemName => {
+          if (typeof data[itemName] !== 'function')
+            dataList[itemName] = data[itemName]
+        })
+
+        return dataList
+      }
+
       _filterData(data = this) {
         var cloneData = {}
 
-        for (let key in data)
-          if (key[0] !== '_' && typeof data[key] !== 'function')
+        Object.keys(this._pullData(data)).forEach(key => {
+          if (key[0] !== '_')
             cloneData[key] = angular.copy(data[key])
+        })
 
         return this.transformFn(cloneData)
       }
 
-      _filterFunctions() {
+      _filterFunctions(data) {
         var functionSet = {},
             copyFns     = ['data', 'bindTo']
 
-        // We set these manually so ES6 Classes method's aren't
-        // enumerable
-        copyFns.forEach(fn => functionSet[fn] = typeof this[fn] === 'function' ? this[fn].bind(this) : this[fn])
+        if (!data)
+          // We set these manually so ES6 Classes method's aren't
+          // enumerable
+          copyFns.forEach(fn => {
+            functionSet[fn] = this[fn].bind(this)
+          })
+        else
+          Object.keys(data).forEach(itemKey => {
+            if (typeof data[itemKey] === 'function')
+              functionSet[data[itemKey].name] = data[itemKey].bind(this)
+          })
 
         return functionSet
       }

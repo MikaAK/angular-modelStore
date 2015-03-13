@@ -22,10 +22,10 @@
     "babel": "latest"
   },
   "scripts": {
-    "watch":    "babel src/ --out-file dist/notFlux.js --source-maps --watch",
+    "watch":    "babel src/ --out-file dist/notFlux.js --source-maps --watch --external-helpers",
     "clean":    "rm -rf dist",
     "create":   "mkdir dist",
-    "build:js": "babel src/ --out-file dist/notFlux.js",
+    "build:js": "babel src/ --out-file dist/notFlux.js --external-helpers",
     "start":    "npm run clean && npm run task create && npm run watch",
     "build":    "npm run clean && npm run create && npm run build:js"
   },

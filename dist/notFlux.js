@@ -1,5 +1,22 @@
 "use strict";
 
+var babelHelpers = babelHelpers || {
+  prototypeProperties: function prototypeProperties(child, staticProps, instanceProps) {
+    if (staticProps) Object.defineProperties(child, staticProps);
+    if (instanceProps) Object.defineProperties(child.prototype, instanceProps);
+  },
+
+  defineProperty: function defineProperty(obj, key, value) {
+    return Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+  },
+
+  classCallCheck: function classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+};
+
 angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
   return {
     createActions: function createActions(actionList) {
@@ -13,14 +30,10 @@ angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (
 }]);
 "use strict";
 
-var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
 angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope) {
   return (function () {
     function Action(actionName) {
-      _classCallCheck(this, Action);
+      babelHelpers.classCallCheck(this, Action);
 
       var newAction = this.callAction.bind(this);
       this.name = actionName;
@@ -31,7 +44,7 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
       return newAction;
     }
 
-    _prototypeProperties(Action, {
+    babelHelpers.prototypeProperties(Action, {
       createFromList: {
         value: function createFromList(actionList) {
           if (!angular.isArray(actionList)) throw new Error("You must pass actions an array");
@@ -64,8 +77,6 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
       },
       callAction: {
         value: function callAction() {
-          var _this = this;
-
           for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
           }
@@ -73,37 +84,32 @@ angular.module("not-flux").service("Action", ["$rootScope", function ($rootScope
           if (!this._listeners.length) throw new Error("You action has nothing listening to it! Make sure to load it up first");
 
           this._listeners.forEach(function (listener) {
-            return listener.apply(_this, args);
+            return listener.apply(undefined, args);
           });
         },
         writable: true,
         configurable: true
       }
     });
-
     return Action;
   })();
 }]);
 "use strict";
-
-var _defineProperty = function (obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); };
-
-var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
-
-var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 angular.module("not-flux").service("Store", ["$rootScope", "$interval", function ($rootScope, $interval) {
   return (function () {
     // Store Constructor
 
     function Store(data) {
-      _classCallCheck(this, Store);
+      babelHelpers.classCallCheck(this, Store);
 
       // Setup array for users listening to model
       this._changeListeners = [];
 
       // Extend the new data into the class
-      angular.extend(this, data);
+      angular.extend(this, this._pullData(data));
+      // Extend the new functions into the store
+      angular.extend(this, this._filterFunctions(data));
 
       // Set up Object.observe so we can keep the modelCache updated
       // without thinking about it, as well as broadcast change events
@@ -115,7 +121,7 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
       return this._filterFunctions();
     }
 
-    _prototypeProperties(Store, null, {
+    babelHelpers.prototypeProperties(Store, null, {
       init: {
 
         // Init function, this is for overloading
@@ -201,7 +207,7 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
 
                 if (angular.isDefined(value)) {
                   $interval.cancel(intervalCheck);
-                  return resolve(_defineProperty({}, attr, value));
+                  return resolve(babelHelpers.defineProperty({}, attr, value));
                 }
 
                 intervalCheck = $interval(checkForAttribute, 200);
@@ -239,30 +245,48 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
         writable: true,
         configurable: true
       },
+      _pullData: {
+        value: function _pullData(data) {
+          var dataList = {};
+
+          Object.keys(data).forEach(function (itemName) {
+            if (typeof data[itemName] !== "function") dataList[itemName] = data[itemName];
+          });
+
+          return dataList;
+        },
+        writable: true,
+        configurable: true
+      },
       _filterData: {
         value: function _filterData() {
           var data = arguments[0] === undefined ? this : arguments[0];
 
           var cloneData = {};
 
-          for (var key in data) {
-            if (key[0] !== "_" && typeof data[key] !== "function") cloneData[key] = angular.copy(data[key]);
-          }return this.transformFn(cloneData);
+          Object.keys(this._pullData(data)).forEach(function (key) {
+            if (key[0] !== "_") cloneData[key] = angular.copy(data[key]);
+          });
+
+          return this.transformFn(cloneData);
         },
         writable: true,
         configurable: true
       },
       _filterFunctions: {
-        value: function _filterFunctions() {
+        value: function _filterFunctions(data) {
           var _this = this;
 
           var functionSet = {},
               copyFns = ["data", "bindTo"];
 
-          // We set these manually so ES6 Classes method's aren't
-          // enumerable
-          copyFns.forEach(function (fn) {
-            return functionSet[fn] = typeof _this[fn] === "function" ? _this[fn].bind(_this) : _this[fn];
+          if (!data)
+            // We set these manually so ES6 Classes method's aren't
+            // enumerable
+            copyFns.forEach(function (fn) {
+              functionSet[fn] = _this[fn].bind(_this);
+            });else Object.keys(data).forEach(function (itemKey) {
+            if (typeof data[itemKey] === "function") functionSet[data[itemKey].name] = data[itemKey].bind(_this);
           });
 
           return functionSet;
@@ -287,7 +311,6 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
         configurable: true
       }
     });
-
     return Store;
   })();
 }]);

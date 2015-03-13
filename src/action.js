@@ -37,7 +37,7 @@ angular.module('not-flux')
       callAction(...args) {
         if (!this._listeners.length) throw new Error('You action has nothing listening to it! Make sure to load it up first')
 
-        this._listeners.forEach(listener => listener.apply(this, args))
+        this._listeners.forEach(listener => listener(...args))
       }
     }
   }])
