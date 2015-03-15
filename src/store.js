@@ -48,9 +48,10 @@ angular.module('not-flux')
       }
 
       // Emit events along scopes
-      emit(eventName = this.modelCacheId(), data = this) {
+      emit(eventName = this.modelCacheId(), data) {
         // Broadcast events through the application scope only
         // passes a deep copy of the data
+
         $rootScope.$broadcast(eventName, this._filterData(data))
       }
 
@@ -124,7 +125,9 @@ angular.module('not-flux')
       }
 
       _filterData(data = this) {
-        var cloneData = {}
+        if (data !== this) return angular.copy(data)
+
+        let cloneData = {}
 
         Object.keys(this._pullData(data)).forEach(key => {
           if (key[0] !== '_')

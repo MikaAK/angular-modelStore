@@ -166,12 +166,12 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
 
         // Emit events along scopes
 
-        value: function emit() {
+        value: function emit(_x, data) {
           var eventName = arguments[0] === undefined ? this.modelCacheId() : arguments[0];
-          var data = arguments[1] === undefined ? this : arguments[1];
 
           // Broadcast events through the application scope only
           // passes a deep copy of the data
+
           $rootScope.$broadcast(eventName, this._filterData(data));
         },
         writable: true,
@@ -262,7 +262,9 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
         value: function _filterData() {
           var data = arguments[0] === undefined ? this : arguments[0];
 
-          var cloneData = {};
+          if (data !== this) {
+            return angular.copy(data);
+          }var cloneData = {};
 
           Object.keys(this._pullData(data)).forEach(function (key) {
             if (key[0] !== "_") cloneData[key] = angular.copy(data[key]);
