@@ -14,8 +14,7 @@ var helpers = {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
     }
-  },
-}
+  } },
     babelHelpers = babelHelpers && angular.extend(helpers, babelHelpers) || helpers;
 
 angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
@@ -320,18 +319,15 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
             return final;
           })();
 
-          debugger;
           listeners = (function () {
             var res = [];
 
-            newChanges.forEach(function (obj) {
-              res = res.concat(obj._changeListeners);
+            newChanges.forEach(function (change) {
+              return res = res.concat(change.object._changeListeners);
             });
 
             return res;
           })();
-
-          debugger;
 
           if (listeners.length) thaw(listeners, {
             each: function (i) {
