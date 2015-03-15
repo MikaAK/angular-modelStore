@@ -154,8 +154,32 @@ angular.module('not-flux')
       }
 
       _objectChanged(changes) {
-        var object    = changes[changes.length - 1].object,
-            listeners = object._changeListeners
+        // Must use semicolons on closures
+         var listeners,
+             _          = _ || angular.injector(['lodash']).get('_'),
+             // Use lodash or custom function to get unique objects of new changes
+             newChanges = (_ && _.uniq(changes.reverse(), change => change.name)) || (() => {
+              var keys,
+                  res = {},
+                  final = []
+
+              changes.reverse().forEach(change => {
+                if (!res[change.name])
+                  res[change.name] = change
+              })
+
+              Object.keys(res).forEach(key => final.push(res[key]))
+
+              return final
+            })();
+        
+        listeners = (() => {
+          var res = []
+
+          newChanges.forEach(change => res = res.concat(change.object._changeListeners))
+          
+          return res
+        })();
 
         if (listeners.length)
           thaw(listeners, {

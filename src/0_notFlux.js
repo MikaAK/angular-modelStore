@@ -14,7 +14,7 @@ var helpers = {
         if (!(instance instanceof Constructor)) {
           throw new TypeError("Cannot call a class as a function")
         }
-      }
+      },
     },
     babelHelpers = (babelHelpers && angular.extend(helpers, babelHelpers)) || helpers
 

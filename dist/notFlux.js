@@ -14,8 +14,8 @@ var helpers = {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
     }
-  }
-},
+  },
+}
     babelHelpers = babelHelpers && angular.extend(helpers, babelHelpers) || helpers;
 
 angular.module("not-flux", []).factory("NotFlux", ["Store", "Action", function (Store, Action) {
@@ -297,8 +297,41 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
       },
       _objectChanged: {
         value: function _objectChanged(changes) {
-          var object = changes[changes.length - 1].object,
-              listeners = object._changeListeners;
+          // Must use semicolons on closures
+          var listeners,
+              _ = _ || angular.injector(["lodash"]).get("_"),
+
+          // Use lodash or custom function to get unique objects of new changes
+          newChanges = _ && _.uniq(changes.reverse(), function (change) {
+            return change.name;
+          }) || (function () {
+            var keys,
+                res = {},
+                final = [];
+
+            changes.reverse().forEach(function (change) {
+              if (!res[change.name]) res[change.name] = change;
+            });
+
+            Object.keys(res).forEach(function (key) {
+              return final.push(res[key]);
+            });
+
+            return final;
+          })();
+
+          debugger;
+          listeners = (function () {
+            var res = [];
+
+            newChanges.forEach(function (obj) {
+              res = res.concat(obj._changeListeners);
+            });
+
+            return res;
+          })();
+
+          debugger;
 
           if (listeners.length) thaw(listeners, {
             each: function (i) {
