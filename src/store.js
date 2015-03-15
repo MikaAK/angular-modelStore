@@ -159,17 +159,17 @@ angular.module('not-flux')
             _ = _ || angular.injector(["lodash"]).get("_"),
 
             // Use lodash or custom function to get unique objects of new changes
-            newChanges = (_ && _.uniq(changes.reverse(), change => change.name)) || (() => {
+            newChanges = _ && _.uniq(changes.reverse(), change => change.name) || (() => {
               var keys,
                   res = {},
                   final = []
 
               changes.reverse().forEach(change => {
                 if (!res[change.name]) 
-                  res[change.name] = changes
+                  res[change.name] = change
               })
 
-              Object.keys(res).forEach(key => final.push(res[key].object))
+              Object.keys(res).forEach(key => final.push(res[key]))
 
               return final
             })();

@@ -309,11 +309,11 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
                 final = [];
 
             changes.reverse().forEach(function (change) {
-              if (!res[change.name]) res[change.name] = changes;
+              if (!res[change.name]) res[change.name] = change;
             });
 
             Object.keys(res).forEach(function (key) {
-              return final.push(res[key].object);
+              return final.push(res[key]);
             });
 
             return final;
