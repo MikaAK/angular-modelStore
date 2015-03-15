@@ -309,30 +309,23 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
                 final = [];
 
             changes.reverse().forEach(function (change) {
-              if (!res[change.name]) res[change.name] = change;
+              if (!res[change.name]) res[change.name] = changes;
             });
 
             Object.keys(res).forEach(function (key) {
-              return final.push(res[key]);
+              return final.push(res[key].object);
             });
 
             return final;
           })();
 
-          listeners = (function () {
-            var res = [];
-
-            newChanges.forEach(function (change) {
-              return res = res.concat(change.object._changeListeners);
-            });
-
-            return res;
-          })();
-
-          if (listeners.length) thaw(listeners, {
-            each: function (i) {
+          thaw(newChanges, {
+            each: function each() {
+              var self = this;
               $rootScope.$apply(function () {
-                return listeners[i](object._filterData());
+                self.object._changeListeners.forEach(function (data) {
+                  return data(self.object._filterData());
+                });
               });
             }
           });
