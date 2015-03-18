@@ -246,6 +246,19 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
         writable: true,
         configurable: true
       },
+      emitChange: {
+        value: function emitChange() {
+          var self = this;
+
+          thaw(this._changeListeners, {
+            each: function each() {
+              this(self._filterData());
+            }
+          });
+        },
+        writable: true,
+        configurable: true
+      },
       _pullData: {
         value: function _pullData(data) {
           var dataList = {};

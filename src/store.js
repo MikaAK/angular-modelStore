@@ -114,6 +114,16 @@ angular.module('not-flux')
         }
       }
 
+      emitChange() {
+        var self = this
+        
+        thaw(this._changeListeners, {
+          each: function() {
+            this(self._filterData())
+          }
+        })
+      }
+
       _pullData(data) {
         var dataList = {}
 
@@ -157,10 +167,10 @@ angular.module('not-flux')
         return functionSet
       }
 
-      _objectChanged(changes) { 
+      _objectChanged(changes) {
         var changedStores,
             unique = _ && _.uniq || function(a,b,c) {//array,placeholder,placeholder taken from stack
-           
+
             b = a.length;
             while (c = --b)
               while (c--)
@@ -172,7 +182,7 @@ angular.module('not-flux')
         changedStores = unique(changes
           .filter(obj => !(obj.path === '/_changeListeners' && obj.removed.length))
           .map(obj => obj.root))
-      
+
         thaw(changedStores, {
           each: function() {
             $rootScope.$apply(() => {
