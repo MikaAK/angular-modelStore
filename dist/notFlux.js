@@ -299,7 +299,7 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
       },
       _objectChanged: {
         value: function _objectChanged(changes) {
-          var newObjects,
+          var changedStores,
               unique = _ && _.uniq || function (a, b, c) {
             //array,placeholder,placeholder taken from stack
 
@@ -310,12 +310,10 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
           };
 
           changedStores = unique(changes.filter(function (obj) {
-            return !(obj.path === "/_changeListeners" && !obj.removed.length);
+            return !(obj.path === "/_changeListeners" && obj.removed.length);
           }).map(function (obj) {
             return obj.root;
           }));
-
-          debugger;
 
           thaw(changedStores, {
             each: function each() {
