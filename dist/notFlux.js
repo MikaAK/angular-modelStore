@@ -108,12 +108,13 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
 
       // Extend the new data into the class
       angular.extend(this, this._pullData(data));
+
       // Extend the new functions into the store
       angular.extend(this, this._filterFunctions(data));
 
       // Set up Object.observe so we can keep the modelCache updated
       // without thinking about it, as well as broadcast change events
-      Object.observe(this, this._objectChanged);
+      Nested.observe(this, this._objectChanged);
 
       // Run init function to be overloaded
       this.init();
@@ -298,35 +299,31 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
       },
       _objectChanged: {
         value: function _objectChanged(changes) {
-          // Must use semicolons on closures
-          var listeners,
-              _ = _ || angular.injector(["lodash"]).get("_"),
+          var newObjects,
+              unique = _ && _.uniq || function (a, b, c) {
+            //array,placeholder,placeholder taken from stack
 
-          // Use lodash or custom function to get unique objects of new changes
-          newChanges = _ && _.uniq(changes.reverse(), function (change) {
-            return change.name;
-          }) || (function () {
-            var keys,
-                res = {},
-                final = [];
+            b = a.length;
+            while (c = --b) while (c--) a[b] !== a[c] || a.splice(c, 1);
 
-            changes.reverse().forEach(function (change) {
-              if (!res[change.name]) res[change.name] = change;
-            });
+            return a;
+          };
 
-            Object.keys(res).forEach(function (key) {
-              return final.push(res[key]);
-            });
+          changedStores = unique(changes.filter(function (obj) {
+            return !(obj.path === "/_changeListeners" && !obj.removed.length);
+          }).map(function (obj) {
+            return obj.root;
+          }));
 
-            return final;
-          })();
+          debugger;
 
-          thaw(newChanges, {
+          thaw(changedStores, {
             each: function each() {
-              var self = this;
+              var _this = this;
+
               $rootScope.$apply(function () {
-                self.object._changeListeners.forEach(function (data) {
-                  return data(self.object._filterData());
+                _this._changeListeners.forEach(function (callback) {
+                  return callback(_this._filterData());
                 });
               });
             }

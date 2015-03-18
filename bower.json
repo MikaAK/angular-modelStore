@@ -27,6 +27,7 @@
   ],
   "dependencies": {
     "thaw.js": "~1.2.x",
-    "angular": "~1.3.x"
+    "angular": "~1.3.x",
+    "nested-observe": "~1.2.1"
   }
 }

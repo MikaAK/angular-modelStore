@@ -10,12 +10,13 @@ angular.module('not-flux')
 
         // Extend the new data into the class
         angular.extend(this, this._pullData(data))
+
         // Extend the new functions into the store
         angular.extend(this, this._filterFunctions(data))
 
         // Set up Object.observe so we can keep the modelCache updated
         // without thinking about it, as well as broadcast change events
-        Object.observe(this, this._objectChanged)
+        Nested.observe(this, this._objectChanged)
 
         // Run init function to be overloaded
         this.init()
@@ -156,33 +157,26 @@ angular.module('not-flux')
         return functionSet
       }
 
-      _objectChanged(changes) {
-        // Must use semicolons on closures
-        var listeners,
-            _ = _ || angular.injector(["lodash"]).get("_"),
+      _objectChanged(changes) { 
+        var changedStores,
+            unique = _ && _.uniq || function(a,b,c) {//array,placeholder,placeholder taken from stack
+           
+            b = a.length;
+            while (c = --b)
+              while (c--)
+                a[b] !== a[c] || a.splice(c,1);
 
-            // Use lodash or custom function to get unique objects of new changes
-            newChanges = _ && _.uniq(changes.reverse(), change => change.name) || (() => {
-              var keys,
-                  res = {},
-                  final = []
+            return a
+          }
 
-              changes.reverse().forEach(change => {
-                if (!res[change.name]) 
-                  res[change.name] = change
-              })
-
-              Object.keys(res).forEach(key => final.push(res[key]))
-
-              return final
-            })();
-
-
-        thaw(newChanges, {
+        changedStores = unique(changes
+          .filter(obj => !(obj.path === '/_changeListeners' && obj.removed.length))
+          .map(obj => obj.root))
+      
+        thaw(changedStores, {
           each: function() {
-            var self = this
             $rootScope.$apply(() => {
-              self.object._changeListeners.forEach(data => data(self.object._filterData()))
+              this._changeListeners.forEach(callback => callback(this._filterData()))
             })
           }
         })
