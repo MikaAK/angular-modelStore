@@ -252,7 +252,11 @@ angular.module("not-flux").service("Store", ["$rootScope", "$interval", function
 
           thaw(this._changeListeners, {
             each: function each() {
-              this(self._filterData());
+              var _this = this;
+
+              $rootScope.$apply(function () {
+                _this(self._filterData());
+              });
             }
           });
         },
