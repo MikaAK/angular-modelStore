@@ -119,7 +119,9 @@ angular.module('not-flux')
         
         thaw(this._changeListeners, {
           each: function() {
-            this(self._filterData())
+            $rootScope.$apply(() => {
+              this(self._filterData())
+            })
           }
         })
       }
